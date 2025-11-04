@@ -4,8 +4,12 @@ version = "0.1.0"
 description = "Add your description here"
 requires-python = "==3.13.*"
 dependencies = [
+    "aiosqlite>=0.20.0",
+    "email-validator>=2.3.0",
     "fastapi[standard]>=0.121.0",
     "pwdlib[argon2]>=0.3.0",
+    "pydantic-settings>=2.6.1",
     "pyjwt>=2.10.1",
+    "sqlalchemy[asyncio]>=2.0.36",
     "sqlmodel>=0.0.27",
 ]
