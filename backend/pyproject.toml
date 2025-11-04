@@ -5,5 +5,7 @@ description = "Add your description here"
 requires-python = "==3.13.*"
 dependencies = [
     "fastapi[standard]>=0.121.0",
+    "pwdlib[argon2]>=0.3.0",
     "pyjwt>=2.10.1",
+    "sqlmodel>=0.0.27",
 ]
