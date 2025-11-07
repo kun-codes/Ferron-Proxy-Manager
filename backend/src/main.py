@@ -1,6 +1,7 @@
 from typing import Annotated
 
 from fastapi import Depends, FastAPI
+from contextlib import asynccontextmanager
 
 from src.auth import schemas
 from src.auth.dependencies import get_current_user
@@ -9,19 +10,19 @@ from src.config import settings
 from src.database import create_db_and_tables
 
 
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    await create_db_and_tables()
+    yield
+
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
     debug=settings.debug,
+    lifespan=lifespan,
 )
 
 
-@app.on_event("startup")
-async def on_startup():
-    await create_db_and_tables()
-
-
-# Include routers
 app.include_router(auth_router)
 
 
