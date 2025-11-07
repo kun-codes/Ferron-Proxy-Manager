@@ -27,7 +27,7 @@ app.include_router(auth_router)
 
 @app.get("/")
 async def root():
-    return {"message": "Welcome to Caddy GUI API"}
+    return {"message": "Welcome to Ferron Proxy Manager API"}
 
 
 @app.get("/protected")

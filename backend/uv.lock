@@ -79,33 +79,6 @@ wheels = [
 ]
 
 [[package]]
-name = "caddy-gui"
-version = "0.1.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "aiosqlite" },
-    { name = "email-validator" },
-    { name = "fastapi", extra = ["standard"] },
-    { name = "pwdlib", extra = ["argon2"] },
-    { name = "pydantic-settings" },
-    { name = "pyjwt" },
-    { name = "sqlalchemy", extra = ["asyncio"] },
-    { name = "sqlmodel" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "aiosqlite", specifier = ">=0.20.0" },
-    { name = "email-validator", specifier = ">=2.3.0" },
-    { name = "fastapi", extras = ["standard"], specifier = ">=0.121.0" },
-    { name = "pwdlib", extras = ["argon2"], specifier = ">=0.3.0" },
-    { name = "pydantic-settings", specifier = ">=2.6.1" },
-    { name = "pyjwt", specifier = ">=2.10.1" },
-    { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.36" },
-    { name = "sqlmodel", specifier = ">=0.0.27" },
-]
-
-[[package]]
 name = "certifi"
 version = "2025.10.5"
 source = { registry = "https://pypi.org/simple" }
@@ -241,6 +214,33 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/f9/48/0f14d8555b750dc8c04382804e4214f1d7f55298127f3a0237ba566e69dd/fastapi_cloud_cli-0.3.1.tar.gz", hash = "sha256:8c7226c36e92e92d0c89827e8f56dbf164ab2de4444bd33aa26b6c3f7675db69", size = 24080, upload-time = "2025-10-09T11:32:58.174Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/68/79/7f5a5e5513e6a737e5fb089d9c59c74d4d24dc24d581d3aa519b326bedda/fastapi_cloud_cli-0.3.1-py3-none-any.whl", hash = "sha256:7d1a98a77791a9d0757886b2ffbf11bcc6b3be93210dd15064be10b216bf7e00", size = 19711, upload-time = "2025-10-09T11:32:57.118Z" },
+]
+
+[[package]]
+name = "ferron-proxy-manager"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "aiosqlite" },
+    { name = "email-validator" },
+    { name = "fastapi", extra = ["standard"] },
+    { name = "pwdlib", extra = ["argon2"] },
+    { name = "pydantic-settings" },
+    { name = "pyjwt" },
+    { name = "sqlalchemy", extra = ["asyncio"] },
+    { name = "sqlmodel" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "aiosqlite", specifier = ">=0.20.0" },
+    { name = "email-validator", specifier = ">=2.3.0" },
+    { name = "fastapi", extras = ["standard"], specifier = ">=0.121.0" },
+    { name = "pwdlib", extras = ["argon2"], specifier = ">=0.3.0" },
+    { name = "pydantic-settings", specifier = ">=2.6.1" },
+    { name = "pyjwt", specifier = ">=2.10.1" },
+    { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.36" },
+    { name = "sqlmodel", specifier = ">=0.0.27" },
 ]
 
 [[package]]

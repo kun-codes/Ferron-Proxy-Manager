@@ -5,7 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     # for application
-    app_name: str = "Caddy GUI"
+    app_name: str = "Ferron Proxy Manager"
     app_version: str = "0.1.0"
     debug: bool
     

@@ -1,5 +1,5 @@
 [project]
-name = "caddy-gui"
+name = "Ferron-Proxy-Manager"
 version = "0.1.0"
 description = "Add your description here"
 requires-python = "==3.13.*"
