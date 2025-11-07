@@ -5,6 +5,7 @@ description = "Add your description here"
 requires-python = "==3.13.*"
 dependencies = [
     "aiosqlite>=0.20.0",
+    "ckdl>=1.0",
     "email-validator>=2.3.0",
     "fastapi[standard]>=0.121.0",
     "pwdlib[argon2]>=0.3.0",

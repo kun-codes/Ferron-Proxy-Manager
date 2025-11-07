@@ -111,6 +111,22 @@ wheels = [
 ]
 
 [[package]]
+name = "ckdl"
+version = "1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/4c/20/8de5ece1f086f96bd6fde5e05c49efb4f725ff6bf060ae24507d6d99ab7a/ckdl-1.0.tar.gz", hash = "sha256:e37546ea9cfe12ed0033c9a03833c0405409d9209802d728755f978dd025eacb", size = 93438, upload-time = "2024-12-21T19:43:22.91Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2e/84/1126be26aa8b6ae73eb3e89972c18eb339500d1b7a8ad8a8fbcf8ce80247/ckdl-1.0-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:dbf171e80cb3ba4c78c43b41913054c36a50645b48278426df7123244f8129a8", size = 112621, upload-time = "2024-12-21T19:42:04.246Z" },
+    { url = "https://files.pythonhosted.org/packages/eb/bc/436070148e6f40befb7fdc1901349e4942b92177dc9860e49e7ed360aefb/ckdl-1.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:7546cee3f6ab1edd0c28a7160a7b07f72943e3e781daa0f96214d4a948c5c5aa", size = 104718, upload-time = "2024-12-21T19:42:06.807Z" },
+    { url = "https://files.pythonhosted.org/packages/43/52/73d6dd877d3591dad1d0f78d29ebd7de41bb5f5258599093a55b079de377/ckdl-1.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6d1680b2d0a20704a52b02e02146c4f9e0b250747e6260f8b95e1f612c11f333", size = 133387, upload-time = "2024-12-21T19:42:09.343Z" },
+    { url = "https://files.pythonhosted.org/packages/6a/bb/bd0ec0b14f7ea44bbaf58511f52681826ad9885558d4624f577bc8f724f9/ckdl-1.0-cp313-cp313-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:5b84102837be3cd78b9301bde2780ee8e400db323666d9d13a24d6fa34884340", size = 140320, upload-time = "2024-12-21T19:42:11.796Z" },
+    { url = "https://files.pythonhosted.org/packages/6a/5d/7d3e9cfa2739904a60ba13a3eec75a1e3dc846163835ddbc4f8e4999cb33/ckdl-1.0-cp313-cp313-musllinux_1_2_i686.whl", hash = "sha256:738598cba5c13f30fd1f892c4652e5180aa09b4895a8bc33bc76cc2a3663e642", size = 141465, upload-time = "2024-12-21T19:42:13.269Z" },
+    { url = "https://files.pythonhosted.org/packages/85/7f/566f6c421e0729c1e32473960aa1dda718270cab5207974bf03bb95b038a/ckdl-1.0-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:da67f139b70439f0012aa66d2cc225cd226656957a068f77db602b5b628cb55f", size = 133591, upload-time = "2024-12-21T19:42:14.577Z" },
+    { url = "https://files.pythonhosted.org/packages/c3/37/b0da0b7e8bddcb4099f8b0ac7314210c77b584729001fd1e68033a0405fa/ckdl-1.0-cp313-cp313-win32.whl", hash = "sha256:21b0c8ddffafb11cdc48fd99cc20e632ab3dadb1842db55821328b8fd757d49e", size = 89435, upload-time = "2024-12-21T19:42:16.976Z" },
+    { url = "https://files.pythonhosted.org/packages/26/b6/bfaae4f465b942d6f978a4ed555118d160cc493c805f2bc2cf63a463df29/ckdl-1.0-cp313-cp313-win_amd64.whl", hash = "sha256:fe64d62943a26260b4892a5803403e374bb926561feee34cbe3f112f1a64f78d", size = 104300, upload-time = "2024-12-21T19:42:19.518Z" },
+]
+
+[[package]]
 name = "click"
 version = "8.3.0"
 source = { registry = "https://pypi.org/simple" }
@@ -222,6 +238,7 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "aiosqlite" },
+    { name = "ckdl" },
     { name = "email-validator" },
     { name = "fastapi", extra = ["standard"] },
     { name = "pwdlib", extra = ["argon2"] },
@@ -234,6 +251,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "aiosqlite", specifier = ">=0.20.0" },
+    { name = "ckdl", specifier = ">=1.0" },
     { name = "email-validator", specifier = ">=2.3.0" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.121.0" },
     { name = "pwdlib", extras = ["argon2"], specifier = ">=0.3.0" },
