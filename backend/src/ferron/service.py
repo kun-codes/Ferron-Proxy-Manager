@@ -13,29 +13,29 @@ class FerronConfig:
 
         self.parsed_config = ckdl.parse(text, version=2)
 
-    def find_node(self, node_name: str, is_snippet: bool = False) -> ckdl.Node | None:
-        nodes = self.parsed_config.nodes
+    def get_config_block(self, config_block_name: str, is_snippet: bool = False) -> ckdl.Node | None:
+        config_blocks = self.parsed_config.nodes
 
-        for node in nodes:
+        for config_block in config_blocks:
             if is_snippet:
-                if node.name != "snippet":
+                if config_block.name != "snippet":
                     continue
 
-                if node.args:
-                    first_arg = node.args[0]
-                    if first_arg == node_name:
-                        return node
+                if config_block.args:
+                    first_arg = config_block.args[0]
+                    if first_arg == config_block_name:
+                        return config_block
 
             else:
-                if node.name == node_name:
-                    return node
+                if config_block.name == config_block_name:
+                    return config_block
 
         return None
 
-    def get_node_directive(self, node_name: str, directive_name: str, is_snippet: bool = False) -> list[ckdl.Node]:
+    def get_config_block_directive(self, config_block_name: str, directive_name: str, is_snippet: bool = False) -> list[ckdl.Node]:
         result: list[ckdl.Node] = []
 
-        node = self.find_node(node_name, is_snippet=is_snippet)
+        node = self.get_config_block(config_block_name, is_snippet=is_snippet)
         if node is None:
             return result
 
@@ -47,7 +47,7 @@ class FerronConfig:
 
     def get_directive_arguments(self, node_name: str, directive_name: str, is_snippet: bool = False) -> list[list[Any]]:
         result: list[list[Any]] = []
-        directive_nodes = self.get_node_directive(node_name, directive_name, is_snippet=is_snippet)
+        directive_nodes = self.get_config_block_directive(node_name, directive_name, is_snippet=is_snippet)
 
         for directive_node in directive_nodes:
             result.append(directive_node.args)
@@ -56,7 +56,7 @@ class FerronConfig:
 
     def get_directive_properties(self, node_name: str, directive_name: str, is_snippet: bool = False) -> list[dict[str, Any]]:
         result: list[dict[str, Any]] = []
-        directive_nodes = self.get_node_directive(node_name, directive_name, is_snippet=is_snippet)
+        directive_nodes = self.get_config_block_directive(node_name, directive_name, is_snippet=is_snippet)
 
         for directive_node in directive_nodes:
             result.append(directive_node.properties)

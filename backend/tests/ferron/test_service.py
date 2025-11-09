@@ -11,7 +11,7 @@ from src.ferron.service import FerronConfig
 def ferron_config_manager():
     return FerronConfig(Path("tests/ferron/ferron.kdl"))
 
-@pytest.mark.parametrize("node_name, is_snippet, expected", [
+@pytest.mark.parametrize("config_block_name, is_snippet, expected", [
     ("*", False, """
     * {
         protocols h1 h2
@@ -143,17 +143,17 @@ def ferron_config_manager():
     ("non_existent_snippet", True, None),
     ("non_existent_node", False, None),
 ])
-def test_find_node(ferron_config_manager, node_name: str, is_snippet: bool, expected: str | None):
+def test_get_config_block(ferron_config_manager, config_block_name, is_snippet: bool, expected: str | None):
     if type(expected) is str:
         expected = textwrap.dedent(expected).strip()
 
-    actual = ferron_config_manager.find_node(node_name, is_snippet)
+    actual = ferron_config_manager.get_config_block(config_block_name, is_snippet)
     if type(actual) is ckdl.Node:
         actual = actual.__str__().strip()
 
     assert expected == actual
 
-@pytest.mark.parametrize("node_name, directive_name, is_snippet, expected", [
+@pytest.mark.parametrize("config_block_name, directive_name, is_snippet, expected", [
     ("*", "protocols", False, [ckdl.Node(None, "protocols", "h1", "h2")]),
     ("*", "h2_initial_window_size", False, [ckdl.Node(None, "h2_initial_window_size", 65536)]),
     ("*", "listen_ip", False, [ckdl.Node(None, "listen_ip", "0.0.0.0")]),
@@ -308,8 +308,8 @@ def test_find_node(ferron_config_manager, node_name: str, is_snippet: bool, expe
     ("development_condition", "non_existent_directive", True, []),
     ("example.com", "block", False, []),  # block is valid directive but not present in example.com
 ])
-def test_get_node_directive(ferron_config_manager, node_name: str, directive_name: str, is_snippet: bool, expected):
-    actual = ferron_config_manager.get_node_directive(node_name, directive_name, is_snippet)
+def test_get_config_block_directive(ferron_config_manager, config_block_name, directive_name: str, is_snippet: bool, expected):
+    actual = ferron_config_manager.get_config_block_directive(config_block_name, directive_name, is_snippet)
 
     assert expected == actual
 
