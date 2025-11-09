@@ -518,3 +518,29 @@ cdn.example.com {
         header "X-CDN-Region" "Global"
     }
 }
+
+// source: https://github.com/ferronweb/ferron/blob/29aec83fad83ba2a4ead707557f7b1ff18838fb3/docs/configuration-kdl.md#rego-subconditions
+rego.example.com {
+    condition "DENY_CURL" {
+        is_rego """
+      package ferron
+
+      default pass := false
+
+      pass := true if {
+        input.headers["user-agent"][0] == "curl"
+      }
+
+      pass := true if {
+        startswith(input.headers["user-agent"][0], "curl/")
+      }
+      """
+    }
+
+    if "DENY_CURL" {
+        status 403
+    }
+
+    // Serve static files
+    root "/var/www/html"
+}
