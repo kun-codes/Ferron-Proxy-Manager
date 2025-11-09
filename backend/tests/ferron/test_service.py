@@ -312,3 +312,39 @@ def test_get_node_directive(ferron_config_manager, node_name: str, directive_nam
     actual = ferron_config_manager.get_node_directive(node_name, directive_name, is_snippet)
 
     assert expected == actual
+
+@pytest.mark.parametrize("node_name, directive_name, is_snippet, expected", [
+    ("*", "protocols", False, [["h1", "h2"]]),
+    ("*", "h2_initial_window_size", False, [[65536]]),
+    ("*", "tls_cipher_suite", False, [["TLS_AES_256_GCM_SHA384", "TLS_AES_128_GCM_SHA256"]]),
+    ("security_headers", "header", True, [
+        ["X-Frame-Options", "DENY"],
+        ["X-Content-Type-Options", "nosniff"],
+        ["X-XSS-Protection", "1; mode=block"],
+        ["Referrer-Policy", "strict-origin-when-cross-origin"],
+    ]),
+    ("admin_protection", "users", True, [
+        ["admin", "$2b$10$hashedpassword12345"],
+        ["superuser", "$2b$10$anotherhashpassword67890"],
+    ]),
+    ("admin_protection", "status", True, [
+        [401],
+    ]),
+    ("static_asset_condition", "condition", True, [["is_static_asset"]]),
+    ("example.com", "use", False, [
+        ["security_headers"],
+        ["mobile_condition"],
+        ["admin_ip_condition"],
+        ["api_request_condition"],
+        ["static_asset_condition"],
+        ["development_condition"],
+    ]),
+    ("example.com", "if", False, [["is_mobile"], ["is_admin_ip"], ["is_development"]]),
+    ("example.com", "if_not", False, [["is_mobile"], ["is_development"]]),
+    ("example.com", "error_page", False, [[404, "/var/www/errors/404.html"], [500, "/var/www/errors/500.html"]]),
+    ("api.example.com", "tls", False, [["/etc/ssl/certs/api.example.com.crt", "/etc/ssl/private/api.example.com.key"]]),
+])
+def test_get_directive_arguments(ferron_config_manager, node_name: str, directive_name: str, is_snippet: bool, expected):
+    actual = ferron_config_manager.get_directive_arguments(node_name, directive_name, is_snippet)
+
+    assert expected == actual

@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any
 
 import ckdl
 
@@ -41,5 +42,14 @@ class FerronConfig:
         for child in node.children:
             if child.name == directive_name:
                 result.append(child)
+
+        return result
+
+    def get_directive_arguments(self, node_name: str, directive_name: str, is_snippet: bool = False) -> list[list[Any]]:
+        result: list[list[Any]] = []
+        directive_nodes = self.get_node_directive(node_name, directive_name, is_snippet=is_snippet)
+
+        for directive_node in directive_nodes:
+            result.append(directive_node.args)
 
         return result
