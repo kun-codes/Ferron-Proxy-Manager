@@ -152,3 +152,158 @@ def test_find_node(ferron_config_manager, node_name: str, is_snippet: bool, expe
         actual = actual.__str__().strip()
 
     assert expected == actual
+
+@pytest.mark.parametrize("node_name, directive_name, is_snippet, expected", [
+    ("*", "protocols", False, [ckdl.Node(None, "protocols", "h1", "h2")]),
+    ("*", "h2_initial_window_size", False, [ckdl.Node(None, "h2_initial_window_size", 65536)]),
+    ("*", "listen_ip", False, [ckdl.Node(None, "listen_ip", "0.0.0.0")]),
+    ("*", "ocsp_stapling", False, [ckdl.Node(None, "ocsp_stapling")]),
+    ("*", "log", False, [ckdl.Node(None, "log", "/var/log/ferron/access.log")]),
+    ("*", "default_http_port", False, [ckdl.Node(None, "default_http_port", 80)]),
+    ("*", "tls_cipher_suite", False, [ckdl.Node(None, "tls_cipher_suite", "TLS_AES_256_GCM_SHA384", "TLS_AES_128_GCM_SHA256")]),
+    ("*", "compressed", False, [ckdl.Node(None, "compressed")]),
+    ("security_headers", "header", True, [
+        ckdl.Node(None, "header", "X-Frame-Options", "DENY"),
+        ckdl.Node(None, "header", "X-Content-Type-Options", "nosniff"),
+        ckdl.Node(None, "header", "X-XSS-Protection", "1; mode=block"),
+        ckdl.Node(None, "header", "Referrer-Policy", "strict-origin-when-cross-origin"),
+    ]),
+    ("static_caching", "file_cache_control", True, [ckdl.Node(None, "file_cache_control", "public, max-age=31536000, immutable")]),
+    ("static_caching", "compressed", True, [ckdl.Node(None, "compressed")]),
+    ("static_caching", "etag", True, [ckdl.Node(None, "etag")]),
+    ("admin_protection", "status", True, [
+        ckdl.Node(None, "status", 401, realm="Admin Area", users="admin,superuser"),
+    ]),
+    ("admin_protection", "users", True, [
+        ckdl.Node(None, "users", "admin", "$2b$10$hashedpassword12345"),
+        ckdl.Node(None, "users", "superuser", "$2b$10$anotherhashpassword67890"),
+    ]),
+    ("admin_protection", "limit", True, [ckdl.Node(None, "limit", rate=10, burst=20)]),
+    ("mobile_condition", "condition", True, [
+        ckdl.Node(None, "condition", "is_mobile",
+                  ckdl.Node(None, "is_regex", "{header:User-Agent}", "(Mobile|Android|iPhone|iPad)", case_insensitive=True)),
+    ]),
+    ("admin_ip_condition", "condition", True, [
+        ckdl.Node(None, "condition", "is_admin_ip",
+                  ckdl.Node(None, "is_remote_ip", "192.168.1.10", "10.0.0.5")),
+    ]),
+    ("static_asset_condition", "condition", True, [
+        ckdl.Node(None, "condition", "is_static_asset",
+                  ckdl.Node(None, "is_regex", "{path}", "\\.(css|js|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot|ico)(?:$|[?#])", case_insensitive=True)),
+    ]),
+    ("example.com", "tls", False, [ckdl.Node(None, "tls", "/etc/ssl/certs/example.com.crt", "/etc/ssl/private/example.com.key")]),
+    ("example.com", "auto_tls_contact", False, [ckdl.Node(None, "auto_tls_contact", "admin@example.com")]),
+    ("example.com", "use", False, [
+        ckdl.Node(None, "use", "security_headers"),
+        ckdl.Node(None, "use", "mobile_condition"),
+        ckdl.Node(None, "use", "admin_ip_condition"),
+        ckdl.Node(None, "use", "api_request_condition"),
+        ckdl.Node(None, "use", "static_asset_condition"),
+        ckdl.Node(None, "use", "development_condition"),
+    ]),
+    ("example.com", "if", False, [
+        ckdl.Node(None, "if", "is_mobile",
+                  ckdl.Node(None, "use", "security_headers"),
+                  ckdl.Node(None, "header", "Strict-Transport-Security", "max-age=31536000; includeSubDomains"),
+                  ckdl.Node(None, "header", "X-Mobile-Detected", "true"),
+                  ckdl.Node(None, "root", "/var/www/example.com/mobile"),
+                  ckdl.Node(None, "limit", rate=50, burst=100)),
+        ckdl.Node(None, "if", "is_admin_ip",
+                  ckdl.Node(None, "use", "security_headers"),
+                  ckdl.Node(None, "header", "Strict-Transport-Security", "max-age=31536000; includeSubDomains"),
+                  ckdl.Node(None, "limit", False),
+                  ckdl.Node(None, "header", "X-Admin-Access", "true"),
+                  ckdl.Node(None, "header", "X-Client-IP", "{client_ip}"),
+                  ckdl.Node(None, "log", "/var/log/ferron/admin-access.log")),
+        ckdl.Node(None, "if", "is_development",
+                  ckdl.Node(None, "use", "security_headers"),
+                  ckdl.Node(None, "header", "Strict-Transport-Security", "max-age=31536000; includeSubDomains"),
+                  ckdl.Node(None, "header", "X-Environment", "development"),
+                  ckdl.Node(None, "header", "X-Debug-Mode", "enabled"),
+                  ckdl.Node(None, "header", "Cache-Control", "no-cache, no-store, must-revalidate"),
+                  ckdl.Node(None, "header", "Pragma", "no-cache"),
+                  ckdl.Node(None, "header", "Expires", "0")),
+    ]),
+    ("example.com", "if_not", False, [
+        ckdl.Node(None, "if_not", "is_mobile",
+                  ckdl.Node(None, "use", "security_headers"),
+                  ckdl.Node(None, "header", "Strict-Transport-Security", "max-age=31536000; includeSubDomains"),
+                  ckdl.Node(None, "header", "X-Mobile-Detected", "false"),
+                  ckdl.Node(None, "limit", rate=100, burst=200)),
+        ckdl.Node(None, "if_not", "is_development",
+                  ckdl.Node(None, "use", "security_headers"),
+                  ckdl.Node(None, "header", "Strict-Transport-Security", "max-age=31536000; includeSubDomains"),
+                  ckdl.Node(None, "cache"),
+                  ckdl.Node(None, "cache_vary", "Accept-Encoding", "Accept-Language"),
+                  ckdl.Node(None, "file_cache_control", "public, max-age=3600")),
+    ]),
+    ("example.com", "error_page", False, [
+        ckdl.Node(None, "error_page", 404, "/var/www/errors/404.html"),
+        ckdl.Node(None, "error_page", 500, "/var/www/errors/500.html"),
+    ]),
+    ("example.com", "location", False, [
+        ckdl.Node(None, "location", "/assets",
+                  ckdl.Node(None, "root", "/var/www/assets"),
+                  ckdl.Node(None, "if", "is_static_asset",
+                            ckdl.Node(None, "use", "security_headers"),
+                            ckdl.Node(None, "header", "Strict-Transport-Security", "max-age=31536000; includeSubDomains"),
+                            ckdl.Node(None, "use", "static_caching")),
+                  ckdl.Node(None, "if_not", "is_static_asset",
+                            ckdl.Node(None, "use", "security_headers"),
+                            ckdl.Node(None, "header", "Strict-Transport-Security", "max-age=31536000; includeSubDomains"),
+                            ckdl.Node(None, "header", "Access-Control-Allow-Origin", "*")),
+                  remove_base=True),
+        ckdl.Node(None, "location", "/api",
+                  ckdl.Node(None, "if", "is_api_request",
+                            ckdl.Node(None, "use", "security_headers"),
+                            ckdl.Node(None, "header", "Strict-Transport-Security", "max-age=31536000; includeSubDomains"),
+                            ckdl.Node(None, "use", "cors_headers"),
+                            ckdl.Node(None, "limit", rate=1000, burst=2000),
+                            ckdl.Node(None, "proxy", "http://api-backend:8080"),
+                            ckdl.Node(None, "proxy_request_header_replace", "X-Real-IP", "{client_ip}"),
+                            ckdl.Node(None, "proxy_request_header", "X-Forwarded-Proto", "{scheme}"))),
+        ckdl.Node(None, "location", "/admin",
+                  ckdl.Node(None, "if", "is_admin_ip",
+                            ckdl.Node(None, "use", "security_headers"),
+                            ckdl.Node(None, "header", "Strict-Transport-Security", "max-age=31536000; includeSubDomains"),
+                            ckdl.Node(None, "root", "/var/www/admin"),
+                            ckdl.Node(None, "header", "X-Admin-Direct-Access", "true")),
+                  ckdl.Node(None, "if_not", "is_admin_ip",
+                            ckdl.Node(None, "use", "security_headers"),
+                            ckdl.Node(None, "header", "Strict-Transport-Security", "max-age=31536000; includeSubDomains"),
+                            ckdl.Node(None, "use", "admin_protection"))),
+    ]),
+    ("dev.example.com", "if", False, [
+        ckdl.Node(None, "if", "is_hot_reload",
+                  ckdl.Node(None, "use", "security_headers"),
+                  ckdl.Node(None, "header", "X-Frame-Options", "SAMEORIGIN"),
+                  ckdl.Node(None, "proxy", "http://dev-hmr:3001"),
+                  ckdl.Node(None, "proxy_request_header", "Connection", "Upgrade"),
+                  ckdl.Node(None, "proxy_request_header", "Upgrade", "websocket"),
+                  ckdl.Node(None, "header", "Cache-Control", "no-cache")),
+        ckdl.Node(None, "if", "is_source_map",
+                  ckdl.Node(None, "if", "is_admin_ip",
+                            ckdl.Node(None, "root", "/var/www/dev/sourcemaps")),
+                  ckdl.Node(None, "if_not", "is_admin_ip",
+                            ckdl.Node(None, "status", 404, body="Not found"))),
+        ckdl.Node(None, "if", "is_admin_ip",
+                  ckdl.Node(None, "status", 200, url="/test", body="Development server is working (Admin Access)"),
+                  ckdl.Node(None, "status", 200, url="/debug", body="{\"client_ip\":\"{client_ip}\",\"method\":\"{method}\",\"path\":\"{path}\"}")),
+    ]),
+    ("rego.example.com", "condition", False, [
+    ckdl.Node(None, "condition", "DENY_CURL",
+          ckdl.Node(None, "is_rego", "package ferron\n\n"
+                                     "default pass := false\n\n"
+                                     "pass := true if {\n"
+                                     "  input.headers[\"user-agent\"][0] == \"curl\"\n"
+                                     "}\n\n"
+                                     "pass := true if {\n"
+                                     "  startswith(input.headers[\"user-agent\"][0], \"curl/\")\n"
+                                     "}"
+                    )),
+    ]),
+])
+def test_get_node_directive(ferron_config_manager, node_name: str, directive_name: str, is_snippet: bool, expected):
+    actual = ferron_config_manager.get_node_directive(node_name, directive_name, is_snippet)
+
+    assert expected == actual

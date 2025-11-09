@@ -30,3 +30,16 @@ class FerronConfig:
                     return node
 
         return None
+
+    def get_node_directive(self, node_name: str, directive_name: str, is_snippet: bool = False) -> list[ckdl.Node]:
+        result: list[ckdl.Node] = []
+
+        node = self.find_node(node_name, is_snippet=is_snippet)
+        if node is None:
+            return result
+
+        for child in node.children:
+            if child.name == directive_name:
+                result.append(child)
+
+        return result
