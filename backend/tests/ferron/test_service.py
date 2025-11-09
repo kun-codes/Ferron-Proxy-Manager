@@ -348,3 +348,19 @@ def test_get_directive_arguments(ferron_config_manager, node_name: str, directiv
     actual = ferron_config_manager.get_directive_arguments(node_name, directive_name, is_snippet)
 
     assert expected == actual
+
+
+@pytest.mark.parametrize("node_name, directive_name, is_snippet, expected", [
+    ("admin_protection", "status", True, [{"realm": "Admin Area", "users": "admin,superuser"}]),
+    ("admin_protection", "limit", True, [{"rate": 10, "burst": 20}]),
+    ("example.com", "rewrite", False, [{"last": True}]),
+    ("example.com", "location", False, [{"remove_base": True}, {}, {}]),
+    ("api.example.com", "status", False, [
+        {"url": "/health", "body": "OK"},
+        {"url": "/version", "body": "{\"api_versions\":[\"v1\",\"v2\"],\"server\":\"Ferron\"}"}
+    ])
+])
+def test_get_directive_properties(ferron_config_manager, node_name: str, directive_name: str, is_snippet: bool, expected):
+    actual = ferron_config_manager.get_directive_properties(node_name, directive_name, is_snippet)
+
+    assert expected == actual
