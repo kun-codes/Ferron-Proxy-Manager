@@ -302,6 +302,11 @@ def test_find_node(ferron_config_manager, node_name: str, is_snippet: bool, expe
                                      "}"
                     )),
     ]),
+    ("non_existent_node", "non_existent_directive", False, []),
+    ("non_existent_snippet", "non_existent_directive", True, []),
+    ("example.com", "non_existent_directive", False, []),
+    ("development_condition", "non_existent_directive", True, []),
+    ("example.com", "block", False, []),  # block is valid directive but not present in example.com
 ])
 def test_get_node_directive(ferron_config_manager, node_name: str, directive_name: str, is_snippet: bool, expected):
     actual = ferron_config_manager.get_node_directive(node_name, directive_name, is_snippet)
