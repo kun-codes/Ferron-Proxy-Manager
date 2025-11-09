@@ -14,3 +14,8 @@ dependencies = [
     "sqlalchemy[asyncio]>=2.0.36",
     "sqlmodel>=0.0.27",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.0",
+]
