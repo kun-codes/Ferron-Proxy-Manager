@@ -1,3 +1,4 @@
+// Source: https://github.com/ferronweb/ferron/blob/29aec83fad83ba2a4ead707557f7b1ff18838fb3/docs/configuration-kdl.md#complete-example-combining-multiple-sections
 // Global configuration
 * {
     // Protocol and performance settings
