@@ -45,18 +45,18 @@ class FerronConfig:
 
         return result
 
-    def get_directive_arguments(self, node_name: str, directive_name: str, is_snippet: bool = False) -> list[list[Any]]:
+    def get_directive_arguments(self, config_block_name: str, directive_name: str, is_snippet: bool = False) -> list[list[Any]]:
         result: list[list[Any]] = []
-        directive_nodes = self.get_config_block_directive(node_name, directive_name, is_snippet=is_snippet)
+        directive_nodes = self.get_config_block_directive(config_block_name, directive_name, is_snippet=is_snippet)
 
         for directive_node in directive_nodes:
             result.append(directive_node.args)
 
         return result
 
-    def get_directive_properties(self, node_name: str, directive_name: str, is_snippet: bool = False) -> list[dict[str, Any]]:
+    def get_directive_properties(self, config_block_name: str, directive_name: str, is_snippet: bool = False) -> list[dict[str, Any]]:
         result: list[dict[str, Any]] = []
-        directive_nodes = self.get_config_block_directive(node_name, directive_name, is_snippet=is_snippet)
+        directive_nodes = self.get_config_block_directive(config_block_name, directive_name, is_snippet=is_snippet)
 
         for directive_node in directive_nodes:
             result.append(directive_node.properties)
