@@ -1,0 +1,22 @@
+{# template for serving static files #}
+{{ virtual_host_name }} {
+    root {{ static_files_dir }}
+{% if not compressed %}
+    compressed #false
+{% endif -%}
+
+{% if directory_listing %}
+    directory_listing
+{% endif -%}
+
+{% if in_memory_caching and cache_max_age is defined %}
+    // for in memory caching to speed up websites
+    cache
+    file_cache_control "max-age={{ cache_max_age }}"
+{% endif -%}
+
+{% if precompressed %}
+    precompressed
+{% endif -%}
+
+}
