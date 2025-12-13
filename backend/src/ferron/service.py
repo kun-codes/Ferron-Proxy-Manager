@@ -7,6 +7,9 @@ class FerronConfig:
     def __init__(self, config_file: Path):
         self.config_file = config_file
 
+        self.load_from_file()
+
+    def load_from_file(self) -> None:
         with open(self.config_file, "r", encoding="utf-8") as f:
             text = f.read()
 
