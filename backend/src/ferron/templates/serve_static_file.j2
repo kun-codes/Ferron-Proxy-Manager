@@ -1,5 +1,5 @@
 {# template for serving static files #}
-{%- extends "base_virtual_host.j2" -%}
+{%- extends "_base_virtual_host.j2" -%}
 
 {%- block body %}
     root {{ static_files_dir }}
