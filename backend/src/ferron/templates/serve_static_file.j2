@@ -1,5 +1,7 @@
 {# template for serving static files #}
-{{ virtual_host_name }} {
+{%- extends "base_virtual_host.j2" -%}
+
+{%- block body %}
     root {{ static_files_dir }}
 {% if not compressed %}
     compressed #false
@@ -19,4 +21,4 @@
     precompressed
 {% endif -%}
 
-}
+{% endblock -%}
