@@ -3,6 +3,10 @@
 
 {%- block body %}
     root {{ static_files_dir }}
+{% if use_spa %}
+    rewrite "^/.*" "/" directory=#false file=#false last=#true
+{% endif -%}
+
 {% if not compressed %}
     compressed #false
 {% endif -%}
