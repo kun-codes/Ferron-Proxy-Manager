@@ -65,3 +65,27 @@ class FerronConfig:
             result.append(directive_node.properties)
 
         return result
+
+    def set_config_block(self, config_block_name: str, node: ckdl.Node, is_snippet: bool = False) -> None:
+        """Set or replace a config block. If it exists, replace it; otherwise, add it."""
+        config_blocks = self.parsed_config.nodes
+
+        for i, config_block in enumerate(config_blocks):
+            if is_snippet:
+                if config_block.name == "snippet" and config_block.args and config_block.args[0] == config_block_name:
+                    config_blocks[i] = node
+                    return
+            else:
+                if config_block.name == config_block_name:
+                    config_blocks[i] = node
+                    return
+
+        # If not found, append the new node
+        config_blocks.append(node)
+
+    def save(self, output_file: Path | None = None) -> None:
+        """Save the current config to a file. If no output_file is specified, overwrite the original file."""
+        target_file = output_file if output_file is not None else self.config_file
+
+        with open(target_file, "w", encoding="utf-8") as f:
+            f.write(self.parsed_config.dump(ckdl.EmitterOptions(version=2, identifier_mode=ckdl.IdentifierMode.quote_all_identifiers)))
