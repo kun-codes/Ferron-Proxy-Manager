@@ -1,0 +1,20 @@
+{# template for load balancing #}
+{%- extends "reverse_proxy.j2" -%}
+
+{%- block proxy_location -%}
+
+{% for backend_url in backend_urls %}
+    proxy {{ backend_url }}
+{%- endfor %}
+
+{% if lb_health_check %}
+    lb_health_check #true
+{% endif -%}
+{% if lb_health_check and lb_health_check_max_fails %}
+    lb_health_check_max_fails {{ lb_health_check_max_fails }}
+{% endif -%}
+{% if lb_health_check and lb_health_check_window %}
+    lb_health_check_window {{ lb_health_check_window }}
+{% endif -%}
+
+{%- endblock %}
