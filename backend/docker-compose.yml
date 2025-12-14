@@ -1,0 +1,19 @@
+services:
+    backend:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        container_name: ferron-proxy-backend
+        ports:
+            - "8000:8000"
+        volumes:
+            - ferron-data:/app/data
+        environment:
+            - DEBUG=${DEBUG:-false}
+            - DATABASE_URL=${DATABASE_URL:-sqlite+aiosqlite:///./data/ferron.db}
+            - DATABASE_ECHO=${DATABASE_ECHO:-false}
+            - AUTH_SECRET_KEY=${AUTH_SECRET_KEY:?AUTH_SECRET_KEY is required in production}
+        restart: always
+
+volumes:
+    ferron-data:
