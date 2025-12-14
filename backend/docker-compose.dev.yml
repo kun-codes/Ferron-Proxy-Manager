@@ -1,4 +1,16 @@
 services:
+  # Ferron container
+  ferron:
+    image: ferronserver/ferron:2
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "ferron-acme:/var/cache/ferron-acme" # for persistent automatic TLS cache
+      - "./ferron.kdl:/etc/ferron.kdl"
+      - "ferron-sub-configs:/etc/ferron-proxy-manager/"
+    restart: always
+
   backend:
     build:
       context: .
@@ -9,6 +21,12 @@ services:
     volumes:
       - .:/app
       - ./data:/app/data
+      - "./ferron.kdl:/etc/ferron.kdl"
+      - "ferron-sub-configs:/etc/ferron-proxy-manager/"
     env_file:
       - .env
     restart: unless-stopped
+
+volumes:
+  ferron-acme:
+  ferron-sub-configs:

@@ -1,4 +1,16 @@
 services:
+    # Ferron container
+    ferron:
+        image: ferronserver/ferron:2
+        ports:
+            - "80:80"
+            - "443:443"
+        volumes:
+            - "ferron-acme:/var/cache/ferron-acme"
+            - "./ferron.kdl:/etc/ferron.kdl"
+            - "ferron-sub-configs:/etc/ferron-proxy-manager/"
+        restart: always
+
     backend:
         build:
             context: .
@@ -8,6 +20,8 @@ services:
             - "8000:8000"
         volumes:
             - ferron-data:/app/data
+            - "./ferron.kdl:/etc/ferron.kdl"
+            - "ferron-sub-configs:/etc/ferron-proxy-manager/"
         environment:
             - DEBUG=${DEBUG:-false}
             - DATABASE_URL=${DATABASE_URL:-sqlite+aiosqlite:///./data/ferron.db}
@@ -16,4 +30,6 @@ services:
         restart: always
 
 volumes:
+    ferron-acme:
     ferron-data:
+    ferron-sub-configs:
