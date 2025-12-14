@@ -3,19 +3,29 @@ from typing import List
 from sqlalchemy import Column, Integer, ForeignKey
 from sqlmodel import Field, SQLModel, Relationship
 
+from src.ferron.constants import (
+    DEFAULT_HTTP_PORT,
+    DEFAULT_IS_H1_PROTOCOL_ENABLED,
+    DEFAULT_HTTPS_PORT,
+    DEFAULT_IS_H2_PROTOCOL_ENABLED,
+    DEFAULT_IS_H3_PROTOCOL_ENABLED,
+    DEFAULT_TIMEOUT,
+    DEFAULT_CACHE_MAX_ENTRIES,
+)
+
 
 # TODO: limit this table to only 1 row
 class GlobalConfig(SQLModel, table=True):
     __tablename__ = "ferron_global_config"
 
     id: int = Field(default=None, primary_key=True)
-    default_http_port: int = Field(default=80)
-    default_https_port: int = Field(default=443)
-    is_h1_protocol_enabled: bool = Field(default=True)
-    is_h2_protocol_enabled: bool = Field(default=True)
-    is_h3_protocol_enabled: bool = Field(default=False)
-    timeout: int = Field(default=300000)
-    cache_max_entries: int = Field(default=1024)
+    default_http_port: int = Field(default=DEFAULT_HTTP_PORT)
+    default_https_port: int = Field(default=DEFAULT_HTTPS_PORT)
+    is_h1_protocol_enabled: bool = Field(default=DEFAULT_IS_H1_PROTOCOL_ENABLED)
+    is_h2_protocol_enabled: bool = Field(default=DEFAULT_IS_H2_PROTOCOL_ENABLED)
+    is_h3_protocol_enabled: bool = Field(default=DEFAULT_IS_H3_PROTOCOL_ENABLED)
+    timeout: int = Field(default=DEFAULT_TIMEOUT)
+    cache_max_entries: int = Field(default=DEFAULT_CACHE_MAX_ENTRIES)
 
 
 class BaseVirtualHost(SQLModel):
