@@ -1,4 +1,10 @@
+import os
+import tempfile
+
 import jinja2
+import aiofiles
+from aiofiles import os as aiofiles_os
+
 from src.ferron.schemas import GlobalTemplateConfig, TemplateConfig
 from src.ferron.constants import TemplateType
 from src.ferron.exceptions import TemplateConfigAndTemplateTypeMismatch
@@ -42,3 +48,13 @@ async def render_template(template_type: TemplateType, template_config: Template
         return text
 
     return text
+
+
+async def write_config(path: str, text: str) -> None:
+    """
+    atomically writes `text` to file at `path`
+    """
+    async with aiofiles.tempfile.NamedTemporaryFile(mode="w+", delete=False) as temp_file:
+        await temp_file.write(text)
+
+        aiofiles_os.replace(temp_file.name, path)
