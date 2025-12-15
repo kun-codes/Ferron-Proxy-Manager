@@ -10,7 +10,10 @@ from src.ferron.constants import (
     DEFAULT_CACHE_MAX_ENTRIES,
 )
 
-class GlobalConfig(BaseModel):
+class TemplateConfig(BaseModel):
+    pass
+
+class GlobalTemplateConfig(TemplateConfig):
     default_http_port: int = Field(default=DEFAULT_HTTP_PORT, ge=1, le=65535)
     default_https_port: int = Field(default=DEFAULT_HTTPS_PORT, ge=1, le=65535)
     is_h1_protocol_enabled: bool = DEFAULT_IS_H1_PROTOCOL_ENABLED

@@ -10,7 +10,7 @@ from src.database import get_session
 
 
 async def create_global_config(
-    global_config_data: schemas.GlobalConfig,
+    global_config_data: schemas.GlobalTemplateConfig,
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> models.GlobalConfig:
     try:
@@ -27,7 +27,7 @@ async def create_global_config(
         raise exceptions.GlobalConfigAlreadyExists()
 
 async def update_global_config(
-        global_config_data: schemas.GlobalConfig,
+        global_config_data: schemas.GlobalTemplateConfig,
         session: Annotated[AsyncSession, Depends(get_session)]
 ) -> models.GlobalConfig:
     existing_config = await read_global_config(session)
