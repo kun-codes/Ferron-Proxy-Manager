@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Add your description here"
 requires-python = "==3.13.*"
 dependencies = [
+    "aiofiles>=25.1.0",
     "aiosqlite>=0.20.0",
     "email-validator>=2.3.0",
     "fastapi[standard]>=0.121.0",
