@@ -34,12 +34,12 @@ async def create_global_config(
         ## checking if main config has include statement for global config
         has_include_statement = False
         for line in main_config_text.splitlines():
-            if line.strip() == f"include {ConfigFileLocation.GLOBAL_CONFIG.value}":
+            if line.strip() == f"include \"{ConfigFileLocation.GLOBAL_CONFIG.value}\"":
                 has_include_statement = True
                 break
 
         if not has_include_statement:
-            new_main_config_text = main_config_text + f"\ninclude {ConfigFileLocation.GLOBAL_CONFIG.value}"
+            new_main_config_text = main_config_text + f"\ninclude \"{ConfigFileLocation.GLOBAL_CONFIG.value}\""
             await write_config(ConfigFileLocation.MAIN_CONFIG.value, new_main_config_text)
 
         # committing at last so that if any error happens in file operations, database doesn't have false data
