@@ -1,3 +1,5 @@
+import asyncio
+import os
 from typing import Annotated
 
 import aiofiles
@@ -17,6 +19,9 @@ async def lifespan(_app: FastAPI):
     # this won't modify the file if it already exists
     async with aiofiles.open(ConfigFileLocation.MAIN_CONFIG.value, "a"):
         pass
+
+    # permissions are being set to 644 so that ferron can read the config files
+    asyncio.to_thread(os.chmod, ConfigFileLocation.MAIN_CONFIG.value, 0o644)
 
     # include the main config file in /etc/ferron.kdl if it hasn't been included already
     async with aiofiles.open("/etc/ferron.kdl", "r") as f:

@@ -2,6 +2,7 @@ import os
 
 import jinja2
 import aiofiles
+import asyncio
 from aiofiles import os as aiofiles_os
 
 from src.ferron.schemas import GlobalTemplateConfig, TemplateConfig
@@ -54,7 +55,7 @@ async def render_template(template_type: TemplateType, template_config: Template
 
 async def write_config(path: str, text: str) -> None:
     """
-    atomically writes `text` to file at `path`
+    atomically writes `text` to file at `path` with 644 permissions
     """
     target_dir = os.path.dirname(path)
     
@@ -70,6 +71,9 @@ async def write_config(path: str, text: str) -> None:
     ) as temp_file:
         await temp_file.write(text)
         temp_file_name = temp_file.name
+
+    ## permissions are being set to 644 so that ferron can read the config files
+    asyncio.to_thread(os.chmod, temp_file_name, 0o644)
 
     ## replace atomically
     await aiofiles_os.replace(temp_file_name, path)
