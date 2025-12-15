@@ -54,7 +54,20 @@ async def write_config(path: str, text: str) -> None:
     """
     atomically writes `text` to file at `path`
     """
-    async with aiofiles.tempfile.NamedTemporaryFile(mode="w+", delete=False) as temp_file:
-        await temp_file.write(text)
+    target_dir = os.path.dirname(path)
+    
+    await aiofiles_os.makedirs(target_dir, exist_ok=True)
 
-        aiofiles_os.replace(temp_file.name, path)
+
+    # atomic write by writing to a temp file and then atomically replacing the target file
+    ## have to temp file in the same directory as target to avoid cross-device link errors
+    async with aiofiles.tempfile.NamedTemporaryFile(
+        mode="w+", 
+        delete=False, 
+        dir=target_dir
+    ) as temp_file:
+        await temp_file.write(text)
+        temp_file_name = temp_file.name
+
+    ## replace atomically
+    await aiofiles_os.replace(temp_file_name, path)
