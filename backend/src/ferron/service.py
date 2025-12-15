@@ -1,7 +1,6 @@
 from typing import Annotated
 
 from fastapi import Depends
-from loguru import logger
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy import select
 
@@ -23,7 +22,6 @@ async def create_global_config(
 
         return global_config
     else:
-        logger.warning("GlobalConfig already exists. Creation skipped.")
         raise exceptions.GlobalConfigAlreadyExists()
 
 async def update_global_config(
