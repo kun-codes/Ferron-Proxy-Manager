@@ -1,5 +1,6 @@
 from typing import Annotated
 
+import aiofiles
 from fastapi import Depends, FastAPI
 from contextlib import asynccontextmanager
 
@@ -12,6 +13,11 @@ from src.database import create_db_and_tables
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    # have to create it since main.kdl is expected to be present on every start
+    # this won't modify the file if it already exists
+    async with aiofiles.open(ConfigFileLocation.MAIN_CONFIG.value, "a"):
+        pass
+
     await create_db_and_tables()
     yield
 
