@@ -18,6 +18,20 @@ async def lifespan(_app: FastAPI):
     async with aiofiles.open(ConfigFileLocation.MAIN_CONFIG.value, "a"):
         pass
 
+    # include the main config file in /etc/ferron.kdl if it hasn't been included already
+    async with aiofiles.open("/etc/ferron.kdl", "r") as f:
+        content = await f.read()
+
+    has_included_main_config = False
+    for line in content.splitlines():
+        if line.strip() == f"include \"{ConfigFileLocation.MAIN_CONFIG.value}\"":
+            has_included_main_config = True
+            break
+
+    if not has_included_main_config:
+        async with aiofiles.open("/etc/ferron.kdl", "a") as f:
+            await f.write(f"include \"{ConfigFileLocation.MAIN_CONFIG.value}\"\n")
+
     await create_db_and_tables()
     yield
 
