@@ -11,6 +11,10 @@ from src.ferron.constants import (
     DEFAULT_IS_H3_PROTOCOL_ENABLED,
     DEFAULT_TIMEOUT,
     DEFAULT_CACHE_MAX_ENTRIES,
+    DEFAULT_CACHE_ENABLED,
+    DEFAULT_CACHE_MAX_AGE,
+    DEFAULT_PRESERVE_HOST_HEADER,
+    DEFAULT_USE_UNIX_SOCKET,
 )
 
 
@@ -33,8 +37,8 @@ class BaseVirtualHost(SQLModel):
     virtual_host_name: str = Field(unique=True)
 
 class Cache(SQLModel):
-    cache: bool = Field(default=False)
-    cache_max_age: int = Field(default=3600)
+    cache: bool = Field(default=DEFAULT_CACHE_ENABLED)
+    cache_max_age: int = Field(default=DEFAULT_CACHE_MAX_AGE)
 
 class StaticFileConfig(BaseVirtualHost, Cache, table=True):
     __tablename__ = "ferron_static_file_config"
@@ -47,14 +51,14 @@ class StaticFileConfig(BaseVirtualHost, Cache, table=True):
 
 
 class CommonReverseProxyConfig(BaseVirtualHost, Cache):
-    preserve_host_header: bool = Field(default=False)
+    preserve_host_header: bool = Field(default=DEFAULT_PRESERVE_HOST_HEADER)
 
 
 class ReverseProxyConfig(CommonReverseProxyConfig, table=True):
     __tablename__ = "ferron_reverse_proxy_config"
 
     backend_url: str = Field(default=None)
-    use_unix_socket: bool = Field(default=False)
+    use_unix_socket: bool = Field(default=DEFAULT_USE_UNIX_SOCKET)
     unix_socket_path: str = Field(default=None)
 
 
