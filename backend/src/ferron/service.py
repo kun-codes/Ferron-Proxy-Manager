@@ -13,7 +13,7 @@ from src.ferron.utils import render_template, write_config, read_config
 async def create_global_config(
     global_config_data: schemas.GlobalTemplateConfig,
     session: Annotated[AsyncSession, Depends(get_session)],
-) -> models.GlobalConfig:
+) -> schemas.GlobalTemplateConfig:
     try:
         _existing_config = await read_global_config(session)
     except exceptions.ConfigNotFound:
@@ -27,15 +27,22 @@ async def create_global_config(
         await session.commit()
         await session.refresh(global_config)
 
-        return global_config
+        global_config_schema = schemas.GlobalTemplateConfig.model_validate(global_config)
+
+        return global_config_schema
     else:
         raise exceptions.GlobalConfigAlreadyExists()
 
 async def update_global_config(
         global_config_data: schemas.GlobalTemplateConfig,
         session: Annotated[AsyncSession, Depends(get_session)]
-) -> models.GlobalConfig:
-    existing_config = await read_global_config(session)
+) -> schemas.GlobalTemplateConfig:
+    statement = select(models.GlobalConfig).where(models.GlobalConfig.id == 1)
+    result = await session.exec(statement)
+    existing_config = result.scalar_one_or_none()
+
+    if not existing_config:
+        raise exceptions.ConfigNotFound(config_type="global configuration")
 
     update_data = global_config_data.model_dump(exclude_defaults=True)
     for field, value  in update_data.items():
@@ -48,7 +55,9 @@ async def update_global_config(
     await session.commit()
     await session.refresh(existing_config)
 
-    return existing_config
+    existing_config_schema = schemas.GlobalTemplateConfig.model_validate(existing_config)
+
+    return existing_config_schema
 
 async def write_global_config_to_file(global_config_data: schemas.GlobalTemplateConfig):
     """
@@ -77,7 +86,7 @@ async def write_global_config_to_file(global_config_data: schemas.GlobalTemplate
 
 async def read_global_config(
         session: Annotated[AsyncSession, Depends(get_session)]
-) -> models.GlobalConfig | None:
+) -> schemas.GlobalTemplateConfig:
     statement = select(models.GlobalConfig).where(models.GlobalConfig.id == 1)
 
     result = await session.exec(statement)
@@ -85,4 +94,7 @@ async def read_global_config(
 
     if not config:
         raise exceptions.ConfigNotFound(config_type="global configuration")
+
+    config_schema = schemas.GlobalTemplateConfig.model_validate(config)
+    return config_schema
     return config

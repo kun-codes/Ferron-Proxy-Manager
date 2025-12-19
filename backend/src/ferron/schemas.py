@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from src.ferron.constants import (
     DEFAULT_HTTP_PORT,
@@ -18,6 +18,8 @@ class TemplateConfig(BaseModel):
     pass
 
 class GlobalTemplateConfig(TemplateConfig):
+    model_config = ConfigDict(from_attributes=True)
+
     default_http_port: int = Field(default=DEFAULT_HTTP_PORT, ge=1, le=65535)
     default_https_port: int = Field(default=DEFAULT_HTTPS_PORT, ge=1, le=65535)
     is_h1_protocol_enabled: bool = DEFAULT_IS_H1_PROTOCOL_ENABLED

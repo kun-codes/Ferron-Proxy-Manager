@@ -17,7 +17,7 @@ router = APIRouter(
 @router.get("/global")
 async def read_global_config(
         session: Annotated[AsyncSession, Depends(get_session)]
-):
+) -> schemas.GlobalTemplateConfig:
     config = await service.read_global_config(session)
     return config
 
@@ -25,7 +25,7 @@ async def read_global_config(
 async def create_global_config(
         global_config_data: schemas.GlobalTemplateConfig,
         session: Annotated[AsyncSession, Depends(get_session)]
-):
+) -> schemas.GlobalTemplateConfig:
     config = await service.create_global_config(global_config_data, session)
     return config
 
@@ -33,7 +33,7 @@ async def create_global_config(
 async def update_global_config(
         global_config_data: schemas.GlobalTemplateConfig,
         session: Annotated[AsyncSession, Depends(get_session)]
-):
+) -> schemas.GlobalTemplateConfig:
     config = await service.update_global_config(global_config_data, session)
     return config
 
