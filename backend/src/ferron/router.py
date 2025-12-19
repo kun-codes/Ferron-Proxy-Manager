@@ -3,11 +3,16 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.auth.dependencies import get_current_user
 from src.database import get_session
 from src.ferron import service
 from src.ferron import schemas
 
-router = APIRouter(prefix="/configs", tags=["ferron-config"])
+router = APIRouter(
+    prefix="/configs",
+    tags=["ferron-config"],
+    dependencies=[Depends(get_current_user)]
+)
 
 @router.get("/global")
 async def read_global_config(
