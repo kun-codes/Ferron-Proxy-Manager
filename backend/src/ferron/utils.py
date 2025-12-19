@@ -5,7 +5,7 @@ import aiofiles
 import asyncio
 from aiofiles import os as aiofiles_os
 
-from src.ferron.schemas import GlobalTemplateConfig, TemplateConfig
+from src.ferron.schemas import GlobalTemplateConfig, TemplateConfig, CreateReverseProxyConfig, UpdateReverseProxyConfig
 from src.ferron.constants import TemplateType
 from src.ferron.exceptions import TemplateConfigAndTemplateTypeMismatch, FileNotFound
 
@@ -19,8 +19,6 @@ environment = jinja2.Environment(
 
 async def render_template(template_type: TemplateType, template_config: TemplateConfig)-> str:
     template = environment.get_template(template_type.value)
-
-    text = ""
 
     if template_type == TemplateType.GLOBAL_CONFIG:
         if not isinstance(template_config, GlobalTemplateConfig):
@@ -49,8 +47,14 @@ async def render_template(template_type: TemplateType, template_config: Template
         text = await template.render_async(**global_config)
 
         return text
+    elif template_type == TemplateType.REVERSE_PROXY_CONFIG:
+        if not isinstance(template_config, UpdateReverseProxyConfig):
+            raise TemplateConfigAndTemplateTypeMismatch(template_type, template_config)
 
-    return text
+        # render_async() will ignore the id field in UpdateReverseProxyConfig
+        text = await template.render_async(**template_config.model_dump())
+        
+        return text
 
 
 async def write_config(path: str, text: str) -> None:
