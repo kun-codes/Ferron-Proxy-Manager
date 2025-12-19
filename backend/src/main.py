@@ -9,8 +9,10 @@ from contextlib import asynccontextmanager
 from src.auth import schemas
 from src.auth.dependencies import get_current_user
 from src.auth.router import router as auth_router
+from src.ferron.router import router as config_router
 from src.config import settings
 from src.database import create_db_and_tables
+from src.ferron.constants import ConfigFileLocation
 
 
 @asynccontextmanager
@@ -49,6 +51,7 @@ app = FastAPI(
 
 
 app.include_router(auth_router)
+app.include_router(config_router)
 
 
 @app.get("/")
