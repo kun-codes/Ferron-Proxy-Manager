@@ -30,6 +30,8 @@ class GlobalTemplateConfig(TemplateConfig):
 
 
 class BaseVirtualHost(TemplateConfig):
+    model_config = ConfigDict(from_attributes=True)
+
     virtual_host_name: str
 
 class Cache(TemplateConfig):
