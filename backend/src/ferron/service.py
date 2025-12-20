@@ -54,12 +54,11 @@ async def update_global_config(
 
     session.add(existing_config)
 
-    await write_global_config_to_file(global_config_data)
+    existing_config_schema = schemas.GlobalTemplateConfig.model_validate(existing_config)
+    await write_global_config_to_file(existing_config_schema)
 
     await session.commit()
     await session.refresh(existing_config)
-
-    existing_config_schema = schemas.GlobalTemplateConfig.model_validate(existing_config)
 
     return existing_config_schema
 
