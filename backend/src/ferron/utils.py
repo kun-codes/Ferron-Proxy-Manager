@@ -7,7 +7,7 @@ from aiofiles import os as aiofiles_os
 
 from src.ferron import schemas
 from src.ferron.schemas import GlobalTemplateConfig, TemplateConfig, CreateReverseProxyConfig, UpdateReverseProxyConfig
-from src.ferron.constants import TemplateType, ConfigFileLocation
+from src.ferron.constants import TemplateType, ConfigFileLocation, SUB_CONFIG_PATH
 from src.ferron.exceptions import TemplateConfigAndTemplateTypeMismatch, FileNotFound
 
 _CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -116,3 +116,38 @@ async def write_global_config_to_file(global_config_data: schemas.GlobalTemplate
     if not has_include_statement:
         new_main_config_text = main_config_text + f"\ninclude \"{ConfigFileLocation.GLOBAL_CONFIG.value}\""
         await write_config(ConfigFileLocation.MAIN_CONFIG.value, new_main_config_text)
+
+
+async def write_reverse_proxy_config_to_file(reverse_proxy_config_data: schemas.UpdateReverseProxyConfig) -> None:
+    """
+    helper function to write reverse proxy config to config file
+    """
+    main_config_text = await read_config(ConfigFileLocation.MAIN_CONFIG.value)
+
+    rendered_config = await render_template(
+        TemplateType.REVERSE_PROXY_CONFIG, reverse_proxy_config_data
+    )
+
+    await write_config(
+        f"{SUB_CONFIG_PATH}/{reverse_proxy_config_data.id}_reverse_proxy.kdl",
+        rendered_config
+    )
+
+    has_include_statement = False
+    for line in main_config_text.splitlines():
+        if line.strip() == f"include \"{SUB_CONFIG_PATH}/{reverse_proxy_config_data.id}_reverse_proxy.kdl\"":
+            has_include_statement = True
+            break
+
+    if not has_include_statement:
+        new_main_config_text = main_config_text + f"\ninclude \"{SUB_CONFIG_PATH}/{reverse_proxy_config_data.id}_reverse_proxy.kdl\""
+        await write_config(ConfigFileLocation.MAIN_CONFIG.value, new_main_config_text)
+
+
+async def delete_reverse_proxy_config_from_file(reverse_proxy_id: int) -> None:
+    main_config_text = await read_config(ConfigFileLocation.MAIN_CONFIG.value)
+
+    new_main_config_text = main_config_text.replace(f"include \"{SUB_CONFIG_PATH}/{reverse_proxy_id}_reverse_proxy.kdl\"", "")
+    await write_config(ConfigFileLocation.MAIN_CONFIG.value, new_main_config_text)
+
+    await aiofiles_os.remove(f"{SUB_CONFIG_PATH}/{reverse_proxy_id}_reverse_proxy.kdl")

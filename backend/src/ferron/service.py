@@ -1,16 +1,13 @@
 from typing import Annotated
 
-
-from aiofiles import os as aiofiles_os
-
 from fastapi import Depends
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy import select
 
 from src.ferron import models, schemas, exceptions
 from src.database import get_session
-from src.ferron.constants import TemplateType, ConfigFileLocation, SUB_CONFIG_PATH
-from src.ferron.utils import render_template, write_config, read_config, write_global_config_to_file
+from src.ferron.utils import write_global_config_to_file, write_reverse_proxy_config_to_file, \
+    delete_reverse_proxy_config_from_file
 
 
 async def create_global_config(
@@ -127,32 +124,6 @@ async def update_reverse_proxy_config(
 
     return existing_config_schema
 
-async def write_reverse_proxy_config_to_file(reverse_proxy_config_data: schemas.UpdateReverseProxyConfig) -> None:
-    """
-    helper function to write reverse proxy config to config file
-    """
-    main_config_text = await read_config(ConfigFileLocation.MAIN_CONFIG.value)
-
-    rendered_config = await render_template(
-        TemplateType.REVERSE_PROXY_CONFIG, reverse_proxy_config_data
-    )
-
-    await write_config(
-        f"{SUB_CONFIG_PATH}/{reverse_proxy_config_data.id}_reverse_proxy.kdl",
-        rendered_config
-    )
-
-    has_include_statement = False
-    for line in main_config_text.splitlines():
-        if line.strip() == f"include \"{SUB_CONFIG_PATH}/{reverse_proxy_config_data.id}_reverse_proxy.kdl\"":
-            has_include_statement = True
-            break
-
-    if not has_include_statement:
-        new_main_config_text = main_config_text + f"\ninclude \"{SUB_CONFIG_PATH}/{reverse_proxy_config_data.id}_reverse_proxy.kdl\""
-        await write_config(ConfigFileLocation.MAIN_CONFIG.value, new_main_config_text)
-
-
 async def read_reverse_proxy_config(
         reverse_proxy_id: int,
         session: Annotated[AsyncSession, Depends(get_session)],
@@ -199,11 +170,3 @@ async def delete_reverse_proxy_config(
 
     config_schema = schemas.UpdateReverseProxyConfig.model_validate(config)
     return config_schema
-
-async def delete_reverse_proxy_config_from_file(reverse_proxy_id: int) -> None:
-    main_config_text = await read_config(ConfigFileLocation.MAIN_CONFIG.value)
-
-    new_main_config_text = main_config_text.replace(f"include \"{SUB_CONFIG_PATH}/{reverse_proxy_id}_reverse_proxy.kdl\"", "")
-    await write_config(ConfigFileLocation.MAIN_CONFIG.value, new_main_config_text)
-
-    await aiofiles_os.remove(f"{SUB_CONFIG_PATH}/{reverse_proxy_id}_reverse_proxy.kdl")
