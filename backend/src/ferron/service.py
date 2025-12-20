@@ -3,7 +3,6 @@ from typing import Annotated
 
 from aiofiles import os as aiofiles_os
 
-from loguru import logger
 from fastapi import Depends
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy import select
@@ -11,7 +10,7 @@ from sqlalchemy import select
 from src.ferron import models, schemas, exceptions
 from src.database import get_session
 from src.ferron.constants import TemplateType, ConfigFileLocation, SUB_CONFIG_PATH
-from src.ferron.utils import render_template, write_config, read_config
+from src.ferron.utils import render_template, write_config, read_config, write_global_config_to_file
 
 
 async def create_global_config(
@@ -61,31 +60,6 @@ async def update_global_config(
     await session.refresh(existing_config)
 
     return existing_config_schema
-
-async def write_global_config_to_file(global_config_data: schemas.GlobalTemplateConfig):
-    """
-    helper function to write global config to config file
-    """
-    # writing to config files
-    main_config_text = await read_config(ConfigFileLocation.MAIN_CONFIG.value)
-
-    ## writing to global config
-    rendered_config = await render_template(
-        TemplateType.GLOBAL_CONFIG, global_config_data
-    )
-
-    await write_config(ConfigFileLocation.GLOBAL_CONFIG.value, rendered_config)
-
-    ## checking if main config has include statement for global config and write to main config file if not
-    has_include_statement = False
-    for line in main_config_text.splitlines():
-        if line.strip() == f"include \"{ConfigFileLocation.GLOBAL_CONFIG.value}\"":
-            has_include_statement = True
-            break
-
-    if not has_include_statement:
-        new_main_config_text = main_config_text + f"\ninclude \"{ConfigFileLocation.GLOBAL_CONFIG.value}\""
-        await write_config(ConfigFileLocation.MAIN_CONFIG.value, new_main_config_text)
 
 async def read_global_config(
         session: Annotated[AsyncSession, Depends(get_session)]
