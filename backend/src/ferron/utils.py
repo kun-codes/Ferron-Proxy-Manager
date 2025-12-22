@@ -78,7 +78,7 @@ async def write_config(path: str, text: str) -> None:
         temp_file_name = temp_file.name
 
     ## permissions are being set to 644 so that ferron can read the config files
-    asyncio.to_thread(os.chmod, temp_file_name, 0o644)
+    await asyncio.to_thread(os.chmod, temp_file_name, 0o644)
 
     ## replace atomically
     await aiofiles_os.replace(temp_file_name, path)
