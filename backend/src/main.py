@@ -1,17 +1,44 @@
+import asyncio
+import os
 from typing import Annotated
 
+import aiofiles
 from fastapi import Depends, FastAPI
 from contextlib import asynccontextmanager
 
 from src.auth import schemas
 from src.auth.dependencies import get_current_user
 from src.auth.router import router as auth_router
+from src.ferron.router import router as config_router
 from src.config import settings
 from src.database import create_db_and_tables
+from src.ferron.constants import ConfigFileLocation
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    # have to create it since main.kdl is expected to be present on every start
+    # this won't modify the file if it already exists
+    async with aiofiles.open(ConfigFileLocation.MAIN_CONFIG.value, "a"):
+        pass
+
+    # permissions are being set to 644 so that ferron can read the config files
+    await asyncio.to_thread(os.chmod, ConfigFileLocation.MAIN_CONFIG.value, 0o644)
+
+    # include the main config file in /etc/ferron.kdl if it hasn't been included already
+    async with aiofiles.open("/etc/ferron.kdl", "r") as f:
+        content = await f.read()
+
+    has_included_main_config = False
+    for line in content.splitlines():
+        if line.strip() == f"include \"{ConfigFileLocation.MAIN_CONFIG.value}\"":
+            has_included_main_config = True
+            break
+
+    if not has_included_main_config:
+        async with aiofiles.open("/etc/ferron.kdl", "a") as f:
+            await f.write(f"include \"{ConfigFileLocation.MAIN_CONFIG.value}\"\n")
+
     await create_db_and_tables()
     yield
 
@@ -24,6 +51,7 @@ app = FastAPI(
 
 
 app.include_router(auth_router)
+app.include_router(config_router)
 
 
 @app.get("/")

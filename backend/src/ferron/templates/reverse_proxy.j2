@@ -1,0 +1,22 @@
+{# template for reverse proxying #}
+{%- extends "_base_virtual_host.j2" -%}
+
+{%- block body -%}
+
+{%- block proxy_location %}
+
+{%- if use_unix_socket and unix_socket_path is defined %}
+    proxy {{ backend_url }} unix="{{ unix_socket_path }}"
+{% else %}
+    proxy {{ backend_url }}
+{% endif -%}
+
+{%- endblock -%}
+
+{% include "_cache_template.j2" -%}
+
+{%- if preserve_host_header %}
+    proxy_request_header_replace "Host" "{header:Host}"
+{% endif %}
+
+{%- endblock -%}

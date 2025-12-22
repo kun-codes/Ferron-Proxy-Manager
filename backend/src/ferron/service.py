@@ -1,91 +1,172 @@
-from pathlib import Path
-from typing import Any
+from typing import Annotated
 
-import ckdl
+from fastapi import Depends
+from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlalchemy import select
 
-class FerronConfig:
-    def __init__(self, config_file: Path):
-        self.config_file = config_file
-
-        self.load_from_file()
-
-    def load_from_file(self) -> None:
-        with open(self.config_file, "r", encoding="utf-8") as f:
-            text = f.read()
+from src.ferron import models, schemas, exceptions
+from src.database import get_session
+from src.ferron.utils import write_global_config_to_file, write_reverse_proxy_config_to_file, \
+    delete_reverse_proxy_config_from_file
 
 
-        self.parsed_config = ckdl.parse(text, version=2)
+async def create_global_config(
+    global_config_data: schemas.GlobalTemplateConfig,
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> schemas.GlobalTemplateConfig:
+    try:
+        _existing_config = await read_global_config(session)
+    except exceptions.ConfigNotFound:
+        # committing to db
+        global_config = models.GlobalConfig(**global_config_data.model_dump(exclude_defaults=True))
+        session.add(global_config)
 
-    def get_config_block(self, config_block_name: str, is_snippet: bool = False) -> ckdl.Node | None:
-        config_blocks = self.parsed_config.nodes
+        await write_global_config_to_file(global_config_data)
 
-        for config_block in config_blocks:
-            if is_snippet:
-                if config_block.name != "snippet":
-                    continue
+        # committing at last so that if any error happens in file operations, database doesn't have false data
+        await session.commit()
+        await session.refresh(global_config)
 
-                if config_block.args:
-                    first_arg = config_block.args[0]
-                    if first_arg == config_block_name:
-                        return config_block
+        global_config_schema = schemas.GlobalTemplateConfig.model_validate(global_config)
 
-            else:
-                if config_block.name == config_block_name:
-                    return config_block
+        return global_config_schema
+    else:
+        raise exceptions.GlobalConfigAlreadyExists()
 
-        return None
+async def update_global_config(
+        global_config_data: schemas.GlobalTemplateConfig,
+        session: Annotated[AsyncSession, Depends(get_session)]
+) -> schemas.GlobalTemplateConfig:
+    statement = select(models.GlobalConfig).where(models.GlobalConfig.id == 1)
+    result = await session.exec(statement)
+    existing_config = result.scalar_one_or_none()
 
-    def get_config_block_directive(self, config_block_name: str, directive_name: str, is_snippet: bool = False) -> list[ckdl.Node]:
-        result: list[ckdl.Node] = []
+    if not existing_config:
+        raise exceptions.ConfigNotFound(config_type="global configuration")
 
-        node = self.get_config_block(config_block_name, is_snippet=is_snippet)
-        if node is None:
-            return result
+    update_data = global_config_data.model_dump(exclude_defaults=True)
+    for field, value  in update_data.items():
+        setattr(existing_config, field, value)
 
-        for child in node.children:
-            if child.name == directive_name:
-                result.append(child)
+    session.add(existing_config)
 
-        return result
+    existing_config_schema = schemas.GlobalTemplateConfig.model_validate(existing_config)
+    await write_global_config_to_file(existing_config_schema)
 
-    def get_directive_arguments(self, config_block_name: str, directive_name: str, is_snippet: bool = False) -> list[list[Any]]:
-        result: list[list[Any]] = []
-        directive_nodes = self.get_config_block_directive(config_block_name, directive_name, is_snippet=is_snippet)
+    await session.commit()
+    await session.refresh(existing_config)
 
-        for directive_node in directive_nodes:
-            result.append(directive_node.args)
+    return existing_config_schema
 
-        return result
+async def read_global_config(
+        session: Annotated[AsyncSession, Depends(get_session)]
+) -> schemas.GlobalTemplateConfig:
+    statement = select(models.GlobalConfig).where(models.GlobalConfig.id == 1)
 
-    def get_directive_properties(self, config_block_name: str, directive_name: str, is_snippet: bool = False) -> list[dict[str, Any]]:
-        result: list[dict[str, Any]] = []
-        directive_nodes = self.get_config_block_directive(config_block_name, directive_name, is_snippet=is_snippet)
+    result = await session.exec(statement)
+    config = result.scalar_one_or_none()
 
-        for directive_node in directive_nodes:
-            result.append(directive_node.properties)
+    if not config:
+        raise exceptions.ConfigNotFound(config_type="global configuration")
 
-        return result
+    config_schema = schemas.GlobalTemplateConfig.model_validate(config)
+    return config_schema
 
-    def set_config_block(self, config_block_name: str, node: ckdl.Node, is_snippet: bool = False) -> None:
-        """Set or replace a config block. If it exists, replace it; otherwise, add it."""
-        config_blocks = self.parsed_config.nodes
+async def create_reverse_proxy_config(
+        create_reverse_proxy_config_data: schemas.CreateReverseProxyConfig,
+        session: Annotated[AsyncSession, Depends(get_session)]
+) -> schemas.UpdateReverseProxyConfig:
+    reverse_proxy_config = models.ReverseProxyConfig(**create_reverse_proxy_config_data.model_dump(exclude_defaults=True))
 
-        for i, config_block in enumerate(config_blocks):
-            if is_snippet:
-                if config_block.name == "snippet" and config_block.args and config_block.args[0] == config_block_name:
-                    config_blocks[i] = node
-                    return
-            else:
-                if config_block.name == config_block_name:
-                    config_blocks[i] = node
-                    return
+    session.add(reverse_proxy_config)
+    # have to flush to get id of the new reverse proxy config without committing it to the db
+    await session.flush()
+    id_no = reverse_proxy_config.id
 
-        # If not found, append the new node
-        config_blocks.append(node)
+    # this has id too which is used by write_reverse_proxy_config_to_file to name the file which the config would be
+    # written to
+    reverse_proxy_config_to_file = schemas.UpdateReverseProxyConfig(id=id_no, **create_reverse_proxy_config_data.model_dump())
 
-    def save(self, output_file: Path | None = None) -> None:
-        """Save the current config to a file. If no output_file is specified, overwrite the original file."""
-        target_file = output_file if output_file is not None else self.config_file
+    await write_reverse_proxy_config_to_file(reverse_proxy_config_to_file)
 
-        with open(target_file, "w", encoding="utf-8") as f:
-            f.write(self.parsed_config.dump(ckdl.EmitterOptions(version=2, identifier_mode=ckdl.IdentifierMode.quote_all_identifiers)))
+    await session.commit()
+    await session.refresh(reverse_proxy_config)
+
+    # using UpdateReverseProxyConfig because returning id of new reverse proxy config too
+    reverse_proxy_config_schema = schemas.UpdateReverseProxyConfig.model_validate(reverse_proxy_config_to_file)
+
+    return reverse_proxy_config_schema
+
+async def update_reverse_proxy_config(
+        reverse_proxy_config_data: schemas.UpdateReverseProxyConfig,
+        session: Annotated[AsyncSession, Depends(get_session)]
+) -> schemas.UpdateReverseProxyConfig:
+    # have to do this to check if id specified in reverse_proxy_config_data exists
+    statement = select(models.ReverseProxyConfig).where(models.ReverseProxyConfig.id == reverse_proxy_config_data.id)
+
+    result = await session.exec(statement)
+    existing_config = result.scalar_one_or_none()
+
+    if not existing_config:
+        raise exceptions.ConfigNotFound(config_type="reverse proxy configuration")
+
+    update_data = reverse_proxy_config_data.model_dump(exclude_defaults=True)
+    for field, value  in update_data.items():
+        setattr(existing_config, field, value)
+
+    session.add(existing_config)
+
+    existing_config_schema = schemas.UpdateReverseProxyConfig.model_validate(existing_config)
+    await write_reverse_proxy_config_to_file(existing_config_schema)
+
+    await session.commit()
+    await session.refresh(existing_config)
+
+    return existing_config_schema
+
+async def read_reverse_proxy_config(
+        reverse_proxy_id: int,
+        session: Annotated[AsyncSession, Depends(get_session)],
+) -> schemas.UpdateReverseProxyConfig:
+    statement = select(models.ReverseProxyConfig).where(models.ReverseProxyConfig.id == reverse_proxy_id)
+
+    result = await session.exec(statement)
+    config = result.scalar_one_or_none()
+
+    if not config:
+        raise exceptions.ConfigNotFound(config_type="reverse proxy configuration")
+
+    config_schema = schemas.UpdateReverseProxyConfig.model_validate(config)
+    return config_schema
+
+async def read_all_reverse_proxy_config(
+        session: Annotated[AsyncSession, Depends(get_session)]
+) -> list[models.ReverseProxyConfig]:
+    statement = select(models.ReverseProxyConfig)
+
+    result = await session.exec(statement)
+    configs = result.all()
+
+    return list(configs)
+
+
+async def delete_reverse_proxy_config(
+        reverse_proxy_id: int,
+        session: Annotated[AsyncSession, Depends(get_session)]
+) -> schemas.UpdateReverseProxyConfig:
+    statement = select(models.ReverseProxyConfig).where(models.ReverseProxyConfig.id == reverse_proxy_id)
+
+    result = await session.exec(statement)
+    config = result.scalar_one_or_none()
+
+    if not config:
+        raise exceptions.ConfigNotFound(config_type="reverse proxy configuration")
+
+    await session.delete(config)
+
+    # delete config file only after successfully deleted from db
+    await session.commit()
+    await delete_reverse_proxy_config_from_file(reverse_proxy_id)
+
+    config_schema = schemas.UpdateReverseProxyConfig.model_validate(config)
+    return config_schema

@@ -1,0 +1,24 @@
+{# template for serving static files #}
+{%- extends "_base_virtual_host.j2" -%}
+
+{%- block body %}
+    root {{ static_files_dir }}
+{% if use_spa %}
+    rewrite "^/.*" "/" directory=#false file=#false last=#true
+{% endif -%}
+
+{% if not compressed %}
+    compressed #false
+{% endif -%}
+
+{% if directory_listing %}
+    directory_listing
+{% endif -%}
+
+{% include "_cache_template.j2" -%}
+
+{% if precompressed %}
+    precompressed
+{% endif -%}
+
+{% endblock -%}
