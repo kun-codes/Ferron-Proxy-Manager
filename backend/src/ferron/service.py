@@ -54,7 +54,6 @@ async def update_global_config(
     await write_global_config_to_file(existing_config_schema)
 
     await session.commit()
-    await session.refresh(existing_config)
 
     return existing_config_schema
 
@@ -90,7 +89,6 @@ async def create_reverse_proxy_config(
     await write_reverse_proxy_config_to_file(reverse_proxy_config_to_file)
 
     await session.commit()
-    await session.refresh(reverse_proxy_config)
 
     # using UpdateReverseProxyConfig because returning id of new reverse proxy config too
     reverse_proxy_config_schema = schemas.UpdateReverseProxyConfig.model_validate(reverse_proxy_config_to_file)
@@ -120,7 +118,6 @@ async def update_reverse_proxy_config(
     await write_reverse_proxy_config_to_file(existing_config_schema)
 
     await session.commit()
-    await session.refresh(existing_config)
 
     return existing_config_schema
 
