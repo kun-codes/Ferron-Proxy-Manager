@@ -147,7 +147,11 @@ async def write_reverse_proxy_config_to_file(reverse_proxy_config_data: schemas.
 async def delete_reverse_proxy_config_from_file(reverse_proxy_id: int) -> None:
     main_config_text = await read_config(ConfigFileLocation.MAIN_CONFIG.value)
 
-    new_main_config_text = main_config_text.replace(f"include \"{SUB_CONFIG_PATH}/{reverse_proxy_id}_reverse_proxy.kdl\"", "")
+    include_line = f'include "{SUB_CONFIG_PATH}/{reverse_proxy_id}_reverse_proxy.kdl"'
+
+    lines = [line for line in main_config_text.splitlines() if line.strip() != include_line]
+    new_main_config_text = "\n".join(lines) + ("\n" if lines else "")
+
     await write_config(ConfigFileLocation.MAIN_CONFIG.value, new_main_config_text)
 
     await aiofiles_os.remove(f"{SUB_CONFIG_PATH}/{reverse_proxy_id}_reverse_proxy.kdl")
