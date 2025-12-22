@@ -122,6 +122,13 @@ async def update_reverse_proxy_config(
 
     session.add(existing_config)
 
+    try:
+        await session.flush()
+    except sqlalchemy.exc.IntegrityError:
+        raise VirtualHostNameAlreadyExists(
+            virtual_host_name=reverse_proxy_config_data.virtual_host_name
+        )
+
     existing_config_schema = schemas.UpdateReverseProxyConfig.model_validate(existing_config)
     await write_reverse_proxy_config_to_file(existing_config_schema)
 
