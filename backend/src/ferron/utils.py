@@ -114,7 +114,7 @@ async def write_global_config_to_file(global_config_data: schemas.GlobalTemplate
             break
 
     if not has_include_statement:
-        new_main_config_text = main_config_text + f"\ninclude \"{ConfigFileLocation.GLOBAL_CONFIG.value}\""
+        new_main_config_text = main_config_text + f"include \"{ConfigFileLocation.GLOBAL_CONFIG.value}\"\n"
         await write_config(ConfigFileLocation.MAIN_CONFIG.value, new_main_config_text)
 
 
@@ -140,7 +140,7 @@ async def write_reverse_proxy_config_to_file(reverse_proxy_config_data: schemas.
             break
 
     if not has_include_statement:
-        new_main_config_text = main_config_text + f"\ninclude \"{SUB_CONFIG_PATH}/{reverse_proxy_config_data.id}_reverse_proxy.kdl\""
+        new_main_config_text = main_config_text + f"include \"{SUB_CONFIG_PATH}/{reverse_proxy_config_data.id}_reverse_proxy.kdl\"\n"
         await write_config(ConfigFileLocation.MAIN_CONFIG.value, new_main_config_text)
 
 
