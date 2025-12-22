@@ -1,11 +1,14 @@
 from typing import Annotated
 
+import sqlalchemy.exc
+
 from fastapi import Depends
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy import select
 
 from src.ferron import models, schemas, exceptions
 from src.database import get_session
+from src.ferron.exceptions import VirtualHostNameAlreadyExists
 from src.ferron.utils import write_global_config_to_file, write_reverse_proxy_config_to_file, \
     delete_reverse_proxy_config_from_file
 
@@ -79,7 +82,12 @@ async def create_reverse_proxy_config(
 
     session.add(reverse_proxy_config)
     # have to flush to get id of the new reverse proxy config without committing it to the db
-    await session.flush()
+    try:
+        await session.flush()
+    except sqlalchemy.exc.IntegrityError:
+        raise VirtualHostNameAlreadyExists(
+            virtual_host_name=create_reverse_proxy_config_data.virtual_host_name
+        )
     id_no = reverse_proxy_config.id
 
     # this has id too which is used by write_reverse_proxy_config_to_file to name the file which the config would be
