@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from sqlalchemy import Column, Integer, ForeignKey
 from sqlmodel import Field, SQLModel, Relationship
@@ -32,17 +32,49 @@ class GlobalConfig(SQLModel, table=True):
     cache_max_entries: int = Field(default=DEFAULT_CACHE_MAX_ENTRIES)
 
 
-class BaseVirtualHost(SQLModel):
+class VirtualHost(SQLModel, table=True):
+    __tablename__ = "ferron_virtual_host"
+
     id: int = Field(default=None, primary_key=True)
     virtual_host_name: str = Field(unique=True)
+
+    reverse_proxy_config: Optional["ReverseProxyConfig"] = Relationship(
+        back_populates="virtual_host",
+        # uselist=False because one-to-one relationship
+        sa_relationship_kwargs={"cascade": "all, delete-orphan", "uselist": False}
+    )
+    static_file_config: Optional["StaticFileConfig"] = Relationship(
+        back_populates="virtual_host",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan", "uselist": False}
+    )
+    load_balancer_config: Optional["LoadBalancerConfig"] = Relationship(
+        back_populates="virtual_host",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan", "uselist": False}
+    )
+    load_balancer_backends: List["LoadBalancerBackendURL"] = Relationship(
+        back_populates="virtual_host",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+    )
+
 
 class Cache(SQLModel):
     cache: bool = Field(default=DEFAULT_CACHE_ENABLED)
     cache_max_age: int = Field(default=DEFAULT_CACHE_MAX_AGE)
 
-class StaticFileConfig(BaseVirtualHost, Cache, table=True):
+
+class StaticFileConfig(Cache, SQLModel, table=True):
     __tablename__ = "ferron_static_file_config"
 
+    id: int = Field(default=None, primary_key=True)
+    virtual_host_id: int = Field(
+        sa_column=Column(Integer, ForeignKey("ferron_virtual_host.id", ondelete="CASCADE"), nullable=False)
+    )
+    virtual_host: VirtualHost = Relationship(
+        back_populates="static_file_config",
+        # uselist=False because one-to-one relationship
+        # lazy=selectin because https://stackoverflow.com/a/74256068
+        sa_relationship_kwargs={"lazy": "selectin", "uselist": False}
+    )
     static_files_dir: str = Field(default=None)
     use_spa: bool = Field(default=False)
     compressed: bool = Field(default=False)
@@ -50,23 +82,45 @@ class StaticFileConfig(BaseVirtualHost, Cache, table=True):
     precompressed: bool = Field(default=False)
 
 
-class CommonReverseProxyConfig(BaseVirtualHost, Cache):
+class CommonReverseProxyConfig(Cache):
     preserve_host_header: bool = Field(default=DEFAULT_PRESERVE_HOST_HEADER)
 
 
-class ReverseProxyConfig(CommonReverseProxyConfig, table=True):
+class ReverseProxyConfig(CommonReverseProxyConfig, SQLModel, table=True):
     __tablename__ = "ferron_reverse_proxy_config"
 
+    id: int = Field(default=None, primary_key=True)
+    virtual_host_id: int = Field(
+        sa_column=Column(Integer, ForeignKey("ferron_virtual_host.id", ondelete="CASCADE"), nullable=False)
+    )
+    virtual_host: VirtualHost = Relationship(
+        back_populates="reverse_proxy_config",
+        # uselist=False because one-to-one relationship
+        # lazy=selectin because https://stackoverflow.com/a/74256068
+        sa_relationship_kwargs={"lazy": "selectin", "uselist": False}
+    )
     backend_url: str = Field(default=None)
     use_unix_socket: bool = Field(default=DEFAULT_USE_UNIX_SOCKET)
     unix_socket_path: str = Field(default=None)
+
+    @property
+    def virtual_host_name(self) -> Optional[str]:
+        return self.virtual_host.virtual_host_name if self.virtual_host else None
 
 
 class LoadBalancerBackendURL(SQLModel, table=True):
     __tablename__ = "ferron_load_balancer_backend_url"
 
     id: int = Field(default=None, primary_key=True)
-    backend_url: str = Field(default=None)
+    virtual_host_id: int = Field(
+        sa_column=Column(Integer, ForeignKey("ferron_virtual_host.id", ondelete="CASCADE"), nullable=False)
+    )
+    virtual_host: VirtualHost = Relationship(
+        back_populates="load_balancer_backends",
+        # uselist=False because one-to-one relationship
+        # lazy=selectin because https://stackoverflow.com/a/74256068
+        sa_relationship_kwargs={"lazy": "selectin", "uselist": False}
+    )
     used_in_load_balancer: int = Field(
         sa_column=Column(Integer, ForeignKey("ferron_load_balancer_config.id", ondelete="CASCADE"), nullable=False)
     )
@@ -74,9 +128,19 @@ class LoadBalancerBackendURL(SQLModel, table=True):
     load_balancer_relationship: "LoadBalancerConfig" = Relationship(back_populates="backend_urls_relationship")
 
 
-class LoadBalancerConfig(CommonReverseProxyConfig, table=True):
+class LoadBalancerConfig(CommonReverseProxyConfig, SQLModel, table=True):
     __tablename__ = "ferron_load_balancer_config"
 
+    id: int = Field(default=None, primary_key=True)
+    virtual_host_id: int = Field(
+        sa_column=Column(Integer, ForeignKey("ferron_virtual_host.id", ondelete="CASCADE"), nullable=False)
+    )
+    virtual_host: VirtualHost = Relationship(
+        back_populates="load_balancer_config",
+        # uselist=False because one-to-one relationship
+        # lazy=selectin because https://stackoverflow.com/a/74256068
+        sa_relationship_kwargs={"lazy": "selectin", "uselist": False}
+    )
     backend_urls_relationship: List[LoadBalancerBackendURL] = Relationship(
         back_populates="load_balancer_relationship",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"}
