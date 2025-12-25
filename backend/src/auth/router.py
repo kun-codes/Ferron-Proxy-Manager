@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from src.auth import schemas, service
+from src.auth import schemas, service, models
 from src.auth.dependencies import get_current_user
 from src.database import get_session
 
@@ -16,7 +16,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 async def signup(
     user_create: schemas.UserCreate,
     db: Annotated[AsyncSession, Depends(get_session)],
-):
+) -> models.User:
     user = await service.create_user(db, user_create)
     return user
 
@@ -25,7 +25,7 @@ async def signup(
 async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: Annotated[AsyncSession, Depends(get_session)],
-):
+) -> schemas.Token:
     user = await service.authenticate_user(db, form_data.username, form_data.password)
     return await service.create_token_for_user(db, user)
 
@@ -33,7 +33,7 @@ async def login(
 @router.get("/me", response_model=schemas.User)
 async def get_current_user_info(
     current_user: Annotated[schemas.User, Depends(get_current_user)],
-):
+) -> schemas.User:
     return current_user
 
 
@@ -41,7 +41,7 @@ async def get_current_user_info(
 async def refresh_token(
     refresh_data: schemas.RefreshTokenRequest,
     db: Annotated[AsyncSession, Depends(get_session)],
-):
+) -> schemas.Token:
     """
     refresh access token using a valid refresh token and implements token rotation
     """
@@ -53,7 +53,7 @@ async def logout(
     current_user: Annotated[schemas.User, Depends(get_current_user)],
     refresh_data: schemas.RefreshTokenRequest,
     db: Annotated[AsyncSession, Depends(get_session)],
-):
+) -> None:
     """
     Logs out from current session by revoking the refresh token
 
@@ -68,7 +68,7 @@ async def logout(
 async def logout_all_devices(
     current_user: Annotated[schemas.User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_session)],
-):
+) -> None:
     """
     logs out from all devices by revoking all refresh tokens for the user
     
