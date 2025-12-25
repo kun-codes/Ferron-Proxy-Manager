@@ -81,6 +81,14 @@ async def read_reverse_proxy_config(
     config = await service.read_reverse_proxy_config(reverse_proxy_id, session)
     return config
 
+@router.get(
+    "/reverse-proxy/all",
+)
+async def read_all_reverse_proxy_config(
+        session: Annotated[AsyncSession, Depends(get_session)]
+) -> list[schemas.UpdateReverseProxyConfig]:
+    return await service.read_all_reverse_proxy_config(session=session)
+
 @router.delete(
     "/reverse-proxy",
     responses=generate_error_response(ConfigNotFound, "reverse proxy configuration")
