@@ -27,7 +27,7 @@ async def login(
     db: Annotated[AsyncSession, Depends(get_session)],
 ):
     user = await service.authenticate_user(db, form_data.username, form_data.password)
-    return service.create_token_for_user(user)
+    return await service.create_token_for_user(db, user)
 
 
 @router.get("/me", response_model=schemas.User)
@@ -35,3 +35,44 @@ async def get_current_user_info(
     current_user: Annotated[schemas.User, Depends(get_current_user)],
 ):
     return current_user
+
+
+@router.post("/token/refresh", response_model=schemas.Token)
+async def refresh_token(
+    refresh_data: schemas.RefreshTokenRequest,
+    db: Annotated[AsyncSession, Depends(get_session)],
+):
+    """
+    refresh access token using a valid refresh token and implements token rotation
+    """
+    return await service.refresh_access_token(db, refresh_data.refresh_token)
+
+
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+async def logout(
+    current_user: Annotated[schemas.User, Depends(get_current_user)],
+    refresh_data: schemas.RefreshTokenRequest,
+    db: Annotated[AsyncSession, Depends(get_session)],
+):
+    """
+    Logs out from current session by revoking the refresh token
+
+    Takes:
+    - Access token from Authorization header
+    - Refresh token from request body
+    """
+    await service.revoke_user_refresh_token(db, current_user.id, refresh_data.refresh_token)
+
+
+@router.post("/logout/all", status_code=status.HTTP_204_NO_CONTENT)
+async def logout_all_devices(
+    current_user: Annotated[schemas.User, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(get_session)],
+):
+    """
+    logs out from all devices by revoking all refresh tokens for the user
+    
+    takes:
+    - Access token only from Authorization header
+    """
+    await service.revoke_all_user_tokens(db, current_user.id)
