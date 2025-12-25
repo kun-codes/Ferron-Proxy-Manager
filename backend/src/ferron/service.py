@@ -194,11 +194,11 @@ async def read_reverse_proxy_config(
 
 async def read_all_reverse_proxy_config(
         session: Annotated[AsyncSession, Depends(get_session)]
-) -> list[models.ReverseProxyConfig]:
+) -> list[schemas.UpdateReverseProxyConfig]:
     statement = select(models.ReverseProxyConfig).options(selectinload(models.ReverseProxyConfig.virtual_host))
 
     result = await session.exec(statement)
-    configs = result.all()
+    configs = result.scalars().all()
 
     return [_reverse_proxy_to_schema(config) for config in configs]
 
