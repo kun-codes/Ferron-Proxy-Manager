@@ -4,11 +4,11 @@ This allows error responses to be automatically derived from exception definitio
 """
 from typing import Type, Dict, Any
 
-from src.ferron.exceptions import FerronException
+from fastapi import HTTPException
 
 
 def generate_error_response(
-    exception_class: Type[FerronException],
+    exception_class: Type[HTTPException],
     *args,
     **kwargs
 ) -> Dict[int, Dict[str, Any]]:
