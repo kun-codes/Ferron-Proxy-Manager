@@ -31,7 +31,7 @@ class ConfigNotFound(FerronException):
 
 
 class VirtualHostNameAlreadyExists(FerronException):
-    def __init__(self, virtual_host_name: str):
+    def __init__(self, virtual_host_name: str = "<virtual_host_name>"):
         super().__init__(
             status_code=status.HTTP_409_CONFLICT,
             detail={
