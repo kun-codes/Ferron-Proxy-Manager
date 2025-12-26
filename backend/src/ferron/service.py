@@ -33,6 +33,7 @@ def _static_file_to_schema(config: models.StaticFileConfig) -> schemas.UpdateSta
     return schemas.UpdateStaticFileConfig.model_validate(config, from_attributes=True)
 
 
+
 async def create_global_config(
     global_config_data: schemas.GlobalTemplateConfig,
     session: Annotated[AsyncSession, Depends(get_session)],
@@ -70,8 +71,6 @@ async def update_global_config(
     update_data = global_config_data.model_dump(exclude_defaults=True)
     for field, value  in update_data.items():
         setattr(existing_config, field, value)
-
-    session.add(existing_config)
 
     existing_config_schema = schemas.GlobalTemplateConfig.model_validate(existing_config)
     await write_global_config_to_file(existing_config_schema)
@@ -170,8 +169,6 @@ async def update_reverse_proxy_config(
     update_data = reverse_proxy_config_data.model_dump(exclude_defaults=True, exclude={"virtual_host_name", "id"})
     for field, value in update_data.items():
         setattr(existing_config, field, value)
-
-    session.add(existing_config)
 
     try:
         await session.flush()
@@ -530,8 +527,6 @@ async def update_static_file_config(
     )
     for field, value in update_data.items():
         setattr(existing_config, field, value)
-
-    session.add(existing_config)
 
     try:
         await session.flush()
