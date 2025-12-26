@@ -27,6 +27,7 @@ services:
             - DATABASE_URL=${DATABASE_URL:-sqlite+aiosqlite:///./data/ferron.db}
             - DATABASE_ECHO=${DATABASE_ECHO:-false}
             - AUTH_SECRET_KEY=${AUTH_SECRET_KEY:?AUTH_SECRET_KEY is required in production}
+            - AUTH_REFRESH_SECRET_KEY=${AUTH_REFRESH_SECRET_KEY:?AUTH_REFRESH_SECRET_KEY is required in production}
         restart: always
 
 volumes:
