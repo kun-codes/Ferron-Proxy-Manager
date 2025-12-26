@@ -27,7 +27,7 @@ async def signup(
     user_create: schemas.UserCreate,
     db: Annotated[AsyncSession, Depends(get_session)],
     request: Request
-) -> models.User:
+) -> schemas.User:
     user = await service.create_user(db, user_create)
     return user
 

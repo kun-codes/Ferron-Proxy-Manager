@@ -30,7 +30,7 @@ async def get_user_by_email(db: AsyncSession, email: EmailStr) -> models.User | 
     return result.scalar_one_or_none()
 
 
-async def create_user(db: AsyncSession, user_create: schemas.UserCreate) -> models.User:
+async def create_user(db: AsyncSession, user_create: schemas.UserCreate) -> schemas.User:
     # Check if user already exists
     if await get_user_by_username(db, user_create.username):
         raise UserAlreadyExistsException("User with same credentials already exists")
@@ -47,7 +47,9 @@ async def create_user(db: AsyncSession, user_create: schemas.UserCreate) -> mode
     db.add(db_user)
     await db.commit()
     await db.refresh(db_user)
-    return db_user
+
+    db_user_schema = schemas.User.model_validate(db_user)
+    return db_user_schema
 
 
 async def authenticate_user(db: AsyncSession, username: str, password: str) -> models.User:
