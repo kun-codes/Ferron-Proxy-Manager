@@ -19,6 +19,9 @@ from src.ferron.constants import (
     DEFAULT_COMPRESSED,
     DEFAULT_DIRECTORY_LISTING,
     DEFAULT_PRECOMPRESSED,
+    DEFAULT_LB_HEALTH_CHECK,
+    DEFAULT_LB_HEALTH_CHECK_WINDOW,
+    DEFAULT_LB_HEALTH_CHECK_MAX_FAILS,
 )
 
 
@@ -132,6 +135,7 @@ class LoadBalancerBackendURL(SQLModel, table=True):
     used_in_load_balancer: int = Field(
         sa_column=Column(Integer, ForeignKey("ferron_load_balancer_config.id", ondelete="CASCADE"), nullable=False)
     )
+    backend_url: str = Field(default=None)
 
     load_balancer_relationship: "LoadBalancerConfig" = Relationship(back_populates="backend_urls_relationship")
 
@@ -151,5 +155,16 @@ class LoadBalancerConfig(CommonReverseProxyConfig, SQLModel, table=True):
     )
     backend_urls_relationship: List[LoadBalancerBackendURL] = Relationship(
         back_populates="load_balancer_relationship",
-        sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+        sa_relationship_kwargs={"cascade": "all, delete-orphan", "lazy": "selectin"}
     )
+    lb_health_check: bool = Field(default=DEFAULT_LB_HEALTH_CHECK)
+    lb_health_check_max_fails: int = Field(default=DEFAULT_LB_HEALTH_CHECK_MAX_FAILS)
+    lb_health_check_window: int = Field(default=DEFAULT_LB_HEALTH_CHECK_WINDOW)
+
+    @property
+    def virtual_host_name(self) -> Optional[str]:
+        return self.virtual_host.virtual_host_name if self.virtual_host else None
+    
+    @property
+    def backend_urls(self) -> List[str]:
+        return [backend.backend_url for backend in self.backend_urls_relationship]

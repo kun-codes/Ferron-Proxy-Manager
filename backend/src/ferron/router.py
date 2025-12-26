@@ -61,7 +61,7 @@ async def create_reverse_proxy_config(
 
 @router.patch(
     "/reverse-proxy",
-    responses=generate_error_response(ConfigNotFound)
+    responses=generate_error_response(ConfigNotFound, "reverse proxy configuration")
 )
 async def update_reverse_proxy_config(
         update_reverse_proxy_config_data: schemas.UpdateReverseProxyConfig,
@@ -101,8 +101,62 @@ async def delete_reverse_proxy_config(
     return config
 
 
+@router.post(
+    "/load-balancer",
+    responses=generate_error_response(VirtualHostNameAlreadyExists)
+)
+async def create_load_balancer_config(
+        create_load_balancer_config_data: schemas.CreateLoadBalancerConfig,
+        session: Annotated[AsyncSession, Depends(get_session)]
+) -> schemas.UpdateLoadBalancerConfig:
+    config = await service.create_load_balancer_config(create_load_balancer_config_data, session)
+    return config
 
+
+@router.patch(
+    "/load-balancer",
+    responses=generate_error_response(ConfigNotFound, "load balancer configuration")
+)
+async def update_load_balancer_config(
+        update_load_balancer_config_data: schemas.UpdateLoadBalancerConfig,
+        session: Annotated[AsyncSession, Depends(get_session)],
+) -> schemas.UpdateLoadBalancerConfig:
+    config = await service.update_load_balancer_config(update_load_balancer_config_data, session)
+    return config
+
+
+@router.get(
+    "/load-balancer",
+    responses=generate_error_response(ConfigNotFound, "load balancer configuration")
+)
+async def read_load_balancer_config(
+        load_balancer_id: int,
+        session: Annotated[AsyncSession, Depends(get_session)]
+) -> schemas.UpdateLoadBalancerConfig:
     config = await service.read_load_balancer_config(load_balancer_id, session)
+    return config
+
+
+@router.get(
+    "/load-balancer/all",
+)
+async def read_all_load_balancer_config(
+        session: Annotated[AsyncSession, Depends(get_session)]
+) -> list[schemas.UpdateLoadBalancerConfig]:
+    return await service.read_all_load_balancer_config(session=session)
+
+
+@router.delete(
+    "/load-balancer",
+    responses=generate_error_response(ConfigNotFound, "load balancer configuration")
+)
+async def delete_load_balancer_config(
+        load_balancer_id: int,
+        session: Annotated[AsyncSession, Depends(get_session)]
+) -> schemas.UpdateLoadBalancerConfig:
+    config = await service.delete_load_balancer_config(load_balancer_id, session)
+    return config
+
 
 @router.post(
     "/static-file",

@@ -10,6 +10,7 @@ from src.ferron.schemas import (
     GlobalTemplateConfig,
     TemplateConfig,
     UpdateReverseProxyConfig,
+    UpdateLoadBalancerConfig,
     UpdateStaticFileConfig,
 )
 from src.ferron.constants import TemplateType, ConfigFileLocation, SUB_CONFIG_PATH
@@ -58,6 +59,14 @@ async def render_template(template_type: TemplateType, template_config: Template
             raise TemplateConfigAndTemplateTypeMismatch(template_type, template_config)
 
         # render_async() will ignore the id field in UpdateReverseProxyConfig
+        text = await template.render_async(**template_config.model_dump())
+        
+        return text
+    elif template_type == TemplateType.LOAD_BALANCER_CONFIG:
+        if not isinstance(template_config, UpdateLoadBalancerConfig):
+            raise TemplateConfigAndTemplateTypeMismatch(template_type, template_config)
+
+        # render_async() will ignore the id field in UpdateLoadBalancerConfig
         text = await template.render_async(**template_config.model_dump())
         
         return text
@@ -168,6 +177,46 @@ async def delete_reverse_proxy_config_from_file(reverse_proxy_id: int) -> None:
     await write_config(ConfigFileLocation.MAIN_CONFIG.value, new_main_config_text)
 
     await aiofiles_os.remove(f"{SUB_CONFIG_PATH}/{reverse_proxy_id}_reverse_proxy.kdl")
+
+
+async def write_load_balancer_config_to_file(load_balancer_config_data: schemas.UpdateLoadBalancerConfig) -> None:
+    """
+    helper function to write load balancer config to config file
+    """
+    main_config_text = await read_config(ConfigFileLocation.MAIN_CONFIG.value)
+
+    rendered_config = await render_template(
+        TemplateType.LOAD_BALANCER_CONFIG, load_balancer_config_data
+    )
+
+    await write_config(
+        f"{SUB_CONFIG_PATH}/{load_balancer_config_data.id}_load_balancer.kdl",
+        rendered_config
+    )
+
+    has_include_statement = False
+    for line in main_config_text.splitlines():
+        if line.strip() == f'include "{SUB_CONFIG_PATH}/{load_balancer_config_data.id}_load_balancer.kdl"':
+            has_include_statement = True
+            break
+
+    if not has_include_statement:
+        new_main_config_text = main_config_text + f'include "{SUB_CONFIG_PATH}/{load_balancer_config_data.id}_load_balancer.kdl"\n'
+        await write_config(ConfigFileLocation.MAIN_CONFIG.value, new_main_config_text)
+
+
+async def delete_load_balancer_config_from_file(load_balancer_id: int) -> None:
+    main_config_text = await read_config(ConfigFileLocation.MAIN_CONFIG.value)
+
+    include_line = f'include "{SUB_CONFIG_PATH}/{load_balancer_id}_load_balancer.kdl"'
+
+    lines = [line for line in main_config_text.splitlines() if line.strip() != include_line]
+    new_main_config_text = "\n".join(lines) + ("\n" if lines else "")
+
+    await write_config(ConfigFileLocation.MAIN_CONFIG.value, new_main_config_text)
+
+    await aiofiles_os.remove(f"{SUB_CONFIG_PATH}/{load_balancer_id}_load_balancer.kdl")
+
 
 async def write_static_file_config_to_file(static_file_config_data: schemas.UpdateStaticFileConfig) -> None:
     """

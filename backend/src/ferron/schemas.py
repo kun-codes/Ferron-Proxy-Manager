@@ -12,10 +12,13 @@ from src.ferron.constants import (
     DEFAULT_CACHE_MAX_AGE,
     DEFAULT_PRESERVE_HOST_HEADER,
     DEFAULT_USE_UNIX_SOCKET,
+    DEFAULT_LB_HEALTH_CHECK,
     DEFAULT_USE_SPA,
     DEFAULT_COMPRESSED,
     DEFAULT_DIRECTORY_LISTING,
     DEFAULT_PRECOMPRESSED,
+    DEFAULT_LB_HEALTH_CHECK_MAX_FAILS,
+    DEFAULT_LB_HEALTH_CHECK_WINDOW,
 )
 
 class TemplateConfig(BaseModel):
@@ -52,6 +55,18 @@ class CreateReverseProxyConfig(CommonReverseProxyConfig):
 
 class UpdateReverseProxyConfig(CreateReverseProxyConfig):
     id: int
+
+
+class CreateLoadBalancerConfig(CommonReverseProxyConfig):
+    backend_urls: list[str]
+    lb_health_check: bool = DEFAULT_LB_HEALTH_CHECK
+    lb_health_check_max_fails: int = DEFAULT_LB_HEALTH_CHECK_MAX_FAILS
+    lb_health_check_window: int = DEFAULT_LB_HEALTH_CHECK_WINDOW
+
+
+class UpdateLoadBalancerConfig(CreateLoadBalancerConfig):
+    id: int
+
 
 class CreateStaticFileConfig(BaseVirtualHost, Cache):
     static_files_dir: str
