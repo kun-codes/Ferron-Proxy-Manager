@@ -15,6 +15,12 @@ DEFAULT_PRESERVE_HOST_HEADER = False
 
 DEFAULT_USE_UNIX_SOCKET = False
 
+# Static file defaults
+DEFAULT_USE_SPA = False
+DEFAULT_COMPRESSED = True
+DEFAULT_DIRECTORY_LISTING = False
+DEFAULT_PRECOMPRESSED = False
+
 
 class TemplateType(Enum):
     GLOBAL_CONFIG = "global.j2"

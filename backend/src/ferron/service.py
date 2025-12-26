@@ -12,11 +12,23 @@ from src.database import get_session
 from src.ferron.exceptions import VirtualHostNameAlreadyExists
 from src.ferron.utils import write_global_config_to_file, write_reverse_proxy_config_to_file, \
     delete_reverse_proxy_config_from_file
+from src.ferron.utils import (
+    write_global_config_to_file,
+    write_reverse_proxy_config_to_file,
+    delete_reverse_proxy_config_from_file,
+    write_static_file_config_to_file,
+    delete_static_file_config_from_file,
+)
 
 
 def _reverse_proxy_to_schema(config: models.ReverseProxyConfig) -> schemas.UpdateReverseProxyConfig:
     # Use Pydantic's ORM mode to map the already-loaded model (including its virtual_host) into the schema.
     return schemas.UpdateReverseProxyConfig.model_validate(config, from_attributes=True)
+
+
+def _static_file_to_schema(config: models.StaticFileConfig) -> schemas.UpdateStaticFileConfig:
+    # Use Pydantic's ORM mode to map the already-loaded model (including its virtual_host) into the schema.
+    return schemas.UpdateStaticFileConfig.model_validate(config, from_attributes=True)
 
 
 async def create_global_config(
@@ -231,3 +243,166 @@ async def delete_reverse_proxy_config(
     await delete_reverse_proxy_config_from_file(reverse_proxy_id)
 
     return _reverse_proxy_to_schema(config)
+
+async def create_static_file_config(
+        create_static_file_config_data: schemas.CreateStaticFileConfig,
+        session: Annotated[AsyncSession, Depends(get_session)]
+) -> schemas.UpdateStaticFileConfig:
+    existing_virtual_host_stmt = select(models.VirtualHost).where(
+        models.VirtualHost.virtual_host_name == create_static_file_config_data.virtual_host_name
+    )
+    existing_virtual_host = (await session.exec(existing_virtual_host_stmt)).scalar_one_or_none()
+
+    if existing_virtual_host:
+        raise VirtualHostNameAlreadyExists(
+            virtual_host_name=create_static_file_config_data.virtual_host_name
+        )
+
+    virtual_host = models.VirtualHost(virtual_host_name=create_static_file_config_data.virtual_host_name)
+
+    static_file_data = create_static_file_config_data.model_dump(
+        exclude_defaults=True,
+        exclude={"virtual_host_name"}
+    )
+    static_file_config = models.StaticFileConfig(
+        virtual_host=virtual_host,
+        **static_file_data
+    )
+
+    session.add(virtual_host)
+    session.add(static_file_config)
+
+    # have to flush to get id of the new static file config without committing it to the db
+    try:
+        await session.flush()
+    except sqlalchemy.exc.IntegrityError:
+        raise VirtualHostNameAlreadyExists(
+            virtual_host_name=create_static_file_config_data.virtual_host_name
+        )
+
+    static_file_config_schema = _static_file_to_schema(static_file_config)
+
+    await write_static_file_config_to_file(static_file_config_schema)
+
+    await session.commit()
+
+    return static_file_config_schema
+
+
+async def update_static_file_config(
+        static_file_config_data: schemas.UpdateStaticFileConfig,
+        session: Annotated[AsyncSession, Depends(get_session)]
+) -> schemas.UpdateStaticFileConfig:
+    statement = (
+        select(models.StaticFileConfig)
+        .options(selectinload(models.StaticFileConfig.virtual_host))
+        .where(models.StaticFileConfig.id == static_file_config_data.id)
+    )
+
+    result = await session.exec(statement)
+    existing_config = result.scalar_one_or_none()
+
+    if not existing_config:
+        raise exceptions.ConfigNotFound(config_type="static file configuration")
+
+    if not existing_config.virtual_host:
+        raise exceptions.ConfigNotFound(config_type="static file configuration")
+
+    if static_file_config_data.virtual_host_name != existing_config.virtual_host.virtual_host_name:
+        conflicting_virtual_host_stmt = select(models.VirtualHost).where(
+            models.VirtualHost.virtual_host_name == static_file_config_data.virtual_host_name
+        )
+        conflicting_virtual_host = (await session.exec(conflicting_virtual_host_stmt)).scalar_one_or_none()
+
+        if conflicting_virtual_host and conflicting_virtual_host.id != existing_config.virtual_host.id:
+            raise VirtualHostNameAlreadyExists(
+                virtual_host_name=static_file_config_data.virtual_host_name
+            )
+
+        existing_config.virtual_host.virtual_host_name = static_file_config_data.virtual_host_name
+
+    update_data = static_file_config_data.model_dump(
+        exclude_defaults=True,
+        exclude={"virtual_host_name", "id"}
+    )
+    for field, value in update_data.items():
+        setattr(existing_config, field, value)
+
+    session.add(existing_config)
+
+    try:
+        await session.flush()
+    except sqlalchemy.exc.IntegrityError:
+        raise VirtualHostNameAlreadyExists(
+            virtual_host_name=static_file_config_data.virtual_host_name
+        )
+
+    existing_config_schema = _static_file_to_schema(existing_config)
+    await write_static_file_config_to_file(existing_config_schema)
+
+    await session.commit()
+
+    return existing_config_schema
+
+
+async def read_static_file_config(
+        static_file_id: int,
+        session: Annotated[AsyncSession, Depends(get_session)],
+) -> schemas.UpdateStaticFileConfig:
+    statement = (
+        select(models.StaticFileConfig)
+        .options(selectinload(models.StaticFileConfig.virtual_host))
+        .where(models.StaticFileConfig.id == static_file_id)
+    )
+
+    result = await session.exec(statement)
+    config = result.scalar_one_or_none()
+
+    if not config:
+        raise exceptions.ConfigNotFound(config_type="static file configuration")
+
+    config_schema = _static_file_to_schema(config)
+    return config_schema
+
+
+async def read_all_static_file_config(
+        session: Annotated[AsyncSession, Depends(get_session)]
+) -> list[schemas.UpdateStaticFileConfig]:
+    statement = select(models.StaticFileConfig).options(
+        selectinload(models.StaticFileConfig.virtual_host)
+    )
+
+    result = await session.exec(statement)
+    configs = result.scalars().all()
+
+    return [_static_file_to_schema(config) for config in configs]
+
+
+async def delete_static_file_config(
+        static_file_id: int,
+        session: Annotated[AsyncSession, Depends(get_session)]
+) -> schemas.UpdateStaticFileConfig:
+    statement = (
+        select(models.StaticFileConfig)
+        # lazy=selectin because https://stackoverflow.com/a/74256068
+        # selectinload because https://stackoverflow.com/a/74256068
+        .options(selectinload(models.StaticFileConfig.virtual_host))
+        .where(models.StaticFileConfig.id == static_file_id)
+    )
+
+    result = await session.exec(statement)
+    config = result.scalar_one_or_none()
+
+    if not config:
+        raise exceptions.ConfigNotFound(config_type="static file configuration")
+
+    if config.virtual_host:
+        await session.delete(config.virtual_host)
+    else:
+        await session.delete(config)
+
+    # delete config file only after successfully deleted from db
+    await session.commit()
+    await delete_static_file_config_from_file(static_file_id)
+
+    return _static_file_to_schema(config)

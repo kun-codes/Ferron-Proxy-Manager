@@ -12,6 +12,10 @@ from src.ferron.constants import (
     DEFAULT_CACHE_MAX_AGE,
     DEFAULT_PRESERVE_HOST_HEADER,
     DEFAULT_USE_UNIX_SOCKET,
+    DEFAULT_USE_SPA,
+    DEFAULT_COMPRESSED,
+    DEFAULT_DIRECTORY_LISTING,
+    DEFAULT_PRECOMPRESSED,
 )
 
 class TemplateConfig(BaseModel):
@@ -47,4 +51,15 @@ class CreateReverseProxyConfig(CommonReverseProxyConfig):
     unix_socket_path: str | None = None
 
 class UpdateReverseProxyConfig(CreateReverseProxyConfig):
+    id: int
+
+class CreateStaticFileConfig(BaseVirtualHost, Cache):
+    static_files_dir: str
+    use_spa: bool = DEFAULT_USE_SPA
+    compressed: bool = DEFAULT_COMPRESSED
+    directory_listing: bool = DEFAULT_DIRECTORY_LISTING
+    precompressed: bool = DEFAULT_PRECOMPRESSED
+
+
+class UpdateStaticFileConfig(CreateStaticFileConfig):
     id: int

@@ -15,6 +15,10 @@ from src.ferron.constants import (
     DEFAULT_CACHE_MAX_AGE,
     DEFAULT_PRESERVE_HOST_HEADER,
     DEFAULT_USE_UNIX_SOCKET,
+    DEFAULT_USE_SPA,
+    DEFAULT_COMPRESSED,
+    DEFAULT_DIRECTORY_LISTING,
+    DEFAULT_PRECOMPRESSED,
 )
 
 
@@ -76,10 +80,14 @@ class StaticFileConfig(Cache, SQLModel, table=True):
         sa_relationship_kwargs={"lazy": "selectin", "uselist": False}
     )
     static_files_dir: str = Field(default=None)
-    use_spa: bool = Field(default=False)
-    compressed: bool = Field(default=False)
-    directory_listing: bool = Field(default=False)
-    precompressed: bool = Field(default=False)
+    use_spa: bool = Field(default=DEFAULT_USE_SPA)
+    compressed: bool = Field(default=DEFAULT_COMPRESSED)
+    directory_listing: bool = Field(default=DEFAULT_DIRECTORY_LISTING)
+    precompressed: bool = Field(default=DEFAULT_PRECOMPRESSED)
+
+    @property
+    def virtual_host_name(self) -> Optional[str]:
+        return self.virtual_host.virtual_host_name if self.virtual_host else None
 
 
 class CommonReverseProxyConfig(Cache):
