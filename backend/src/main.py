@@ -3,8 +3,13 @@ import os
 from typing import Annotated
 
 import aiofiles
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, status
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 from contextlib import asynccontextmanager
+
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 
 from src.auth import schemas
 from src.auth.dependencies import get_current_user
@@ -13,6 +18,7 @@ from src.ferron.router import router as config_router
 from src.config import settings
 from src.database import create_db_and_tables
 from src.ferron.constants import ConfigFileLocation
+from src.service import rate_limiter
 
 
 @asynccontextmanager
@@ -48,6 +54,20 @@ app = FastAPI(
     debug=settings.debug,
     lifespan=lifespan,
 )
+app.state.limiter = rate_limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# override the default exception handler to return a custom response
+# from: https://thedkpatel.medium.com/rate-limiting-with-fastapi-an-in-depth-guide-c4d64a776b83
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(
+        status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+        content={
+            "error_code": "rate_limit_exceeded",
+            "message": "Please slow down and try again later.",
+        },
+    )
 
 
 app.include_router(auth_router)

@@ -3,38 +3,46 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel.ext.asyncio.session import AsyncSession
+from starlette.requests import Request
 
 from src.auth import schemas, service, models
 from src.auth.dependencies import get_current_user
 from src.auth.exceptions import UserAlreadyExistsException, InvalidCredentialsException, InvalidTokenException, UserNotFoundException
 from src.database import get_session
+from src.service import rate_limiter
 from src.utils import generate_error_response, merge_responses
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
+# TODO: add rate limit exceeded exception response to this route
 @router.post(
     "/signup",
     response_model=schemas.User,
     status_code=status.HTTP_201_CREATED,
     responses=generate_error_response(UserAlreadyExistsException, "User with same credentials already exists")
 )
+@rate_limiter.limit("3/15minute")
 async def signup(
     user_create: schemas.UserCreate,
     db: Annotated[AsyncSession, Depends(get_session)],
+    request: Request
 ) -> models.User:
     user = await service.create_user(db, user_create)
     return user
 
 
+# TODO: add rate limit exceeded exception response to this route
 @router.post(
     "/login",
     response_model=schemas.Token,
     responses=generate_error_response(InvalidCredentialsException, "Invalid username or password")
 )
+@rate_limiter.limit("5/15minute")
 async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: Annotated[AsyncSession, Depends(get_session)],
+    request: Request
 ) -> schemas.Token:
     user = await service.authenticate_user(db, form_data.username, form_data.password)
     return await service.create_token_for_user(db, user)
@@ -51,6 +59,7 @@ async def get_current_user_info(
     return current_user
 
 
+# TODO: add rate limit exceeded exception response to this route
 @router.post(
     "/token/refresh",
     response_model=schemas.Token,
@@ -59,9 +68,11 @@ async def get_current_user_info(
         generate_error_response(UserNotFoundException, "User not found")
     )
 )
+@rate_limiter.limit("10/15minute")
 async def refresh_token(
     refresh_data: schemas.RefreshTokenRequest,
     db: Annotated[AsyncSession, Depends(get_session)],
+    request: Request
 ) -> schemas.Token:
     """
     refresh access token using a valid refresh token and implements token rotation
