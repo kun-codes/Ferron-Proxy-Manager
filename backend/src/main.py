@@ -1,7 +1,8 @@
 import asyncio
 import os
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Annotated
+from typing import Annotated, Any
 
 import aiofiles
 from fastapi import Depends, FastAPI, status
@@ -21,7 +22,7 @@ from src.service import rate_limiter
 
 
 @asynccontextmanager
-async def lifespan(_app: FastAPI):
+async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     # have to create it since main.kdl is expected to be present on every start
     # this won't modify the file if it already exists
     async with aiofiles.open(ConfigFileLocation.MAIN_CONFIG.value, "a"):
@@ -59,7 +60,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # override the default exception handler to return a custom response
 # from: https://thedkpatel.medium.com/rate-limiting-with-fastapi-an-in-depth-guide-c4d64a776b83
 @app.exception_handler(RateLimitExceeded)
-async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
     return JSONResponse(
         status_code=status.HTTP_429_TOO_MANY_REQUESTS,
         content={
@@ -74,14 +75,14 @@ app.include_router(config_router)
 
 
 @app.get("/")
-async def root():
+async def root() -> dict[str, str]:
     return {"message": "Welcome to Ferron Proxy Manager API"}
 
 
 @app.get("/protected")
 async def protected_route(
     current_user: Annotated[schemas.User, Depends(get_current_user)],
-):
+) -> dict[str, Any]:
     return {
         "message": "This is a protected route",
         "user": {

@@ -23,7 +23,7 @@ def set_sqlite_pragma(dbapi_conn, _connection_record) -> None:
     cursor.close()
 
 
-async def create_db_and_tables():
+async def create_db_and_tables() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.create_all)
 

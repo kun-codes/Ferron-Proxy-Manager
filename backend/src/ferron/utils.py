@@ -114,7 +114,7 @@ async def read_config(path: str) -> str:
         raise FileNotFound(path)
 
 
-async def write_global_config_to_file(global_config_data: schemas.GlobalTemplateConfig):
+async def write_global_config_to_file(global_config_data: schemas.GlobalTemplateConfig) -> None:
     """
     helper function to write global config to config file
     """
