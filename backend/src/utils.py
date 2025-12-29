@@ -9,20 +9,20 @@ from fastapi import HTTPException
 
 def generate_error_response(
     exception_class: Type[HTTPException],
-    *args,
-    **kwargs
+    *args: Any,
+    **kwargs: Any
 ) -> Dict[int, Dict[str, Any]]:
     """
     will generate a fastapi response schema from an exception class. Useful for OpenAPI documentation
-    
+
     Args:
         exception_class: The exception class to generate response from
         *args: Positional arguments to pass to the exception constructor
         **kwargs: Keyword arguments to pass to the exception constructor
-        
+
     Returns:
         A dict with the status code as key and response schema as value
-        
+
     Example:
         @router.get(
             "/global",
@@ -56,13 +56,13 @@ def generate_error_response(
 def merge_responses(*response_dicts: Dict[int, Dict[str, Any]]) -> Dict[int, Dict[str, Any]]:
     """
     Merge multiple response dictionaries into one.
-    
+
     Args:
         *response_dicts: Variable number of response dictionaries to merge
-        
+
     Returns:
         A single merged dictionary
-        
+
     Example:
         @router.patch(
             "/global",

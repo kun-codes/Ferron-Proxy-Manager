@@ -1,7 +1,9 @@
 from typing import AsyncGenerator
 
 from sqlalchemy import event
+from sqlalchemy.dialects.sqlite.aiosqlite import AsyncAdapt_aiosqlite_connection
 from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.pool.base import _ConnectionRecord
 from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession as SQLModelAsyncSession
 
@@ -17,7 +19,11 @@ engine = create_async_engine(
 
 # enable foreign keys for on delete cascade
 @event.listens_for(engine.sync_engine, "connect")
-def set_sqlite_pragma(dbapi_conn, _connection_record) -> None:
+def set_sqlite_pragma(
+    # I got types for these two parameters by debug printing them
+    dbapi_conn: AsyncAdapt_aiosqlite_connection,
+    _connection_record: _ConnectionRecord,
+) -> None:
     cursor = dbapi_conn.cursor()
     cursor.execute("PRAGMA foreign_keys=ON")
     cursor.close()

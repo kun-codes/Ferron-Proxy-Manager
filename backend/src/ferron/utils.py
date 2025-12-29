@@ -162,7 +162,10 @@ async def write_reverse_proxy_config_to_file(reverse_proxy_config_data: schemas.
             break
 
     if not has_include_statement:
-        new_main_config_text = main_config_text + f"include \"{SUB_CONFIG_PATH}/{reverse_proxy_config_data.id}_reverse_proxy.kdl\"\n"
+        new_main_config_text = (
+            main_config_text + 
+            f"include \"{SUB_CONFIG_PATH}/{reverse_proxy_config_data.id}_reverse_proxy.kdl\"\n"
+        )
         await write_config(ConfigFileLocation.MAIN_CONFIG.value, new_main_config_text)
 
 
@@ -201,7 +204,10 @@ async def write_load_balancer_config_to_file(load_balancer_config_data: schemas.
             break
 
     if not has_include_statement:
-        new_main_config_text = main_config_text + f'include "{SUB_CONFIG_PATH}/{load_balancer_config_data.id}_load_balancer.kdl"\n'
+        new_main_config_text = (
+            main_config_text + 
+            f'include "{SUB_CONFIG_PATH}/{load_balancer_config_data.id}_load_balancer.kdl"\n'
+        )
         await write_config(ConfigFileLocation.MAIN_CONFIG.value, new_main_config_text)
 
 
@@ -240,7 +246,10 @@ async def write_static_file_config_to_file(static_file_config_data: schemas.Upda
             break
 
     if not has_include_statement:
-        new_main_config_text = main_config_text + f'include "{SUB_CONFIG_PATH}/{static_file_config_data.id}_static_file.kdl"\n'
+        new_main_config_text = (
+            main_config_text + 
+            f'include "{SUB_CONFIG_PATH}/{static_file_config_data.id}_static_file.kdl"\n'
+        )
         await write_config(ConfigFileLocation.MAIN_CONFIG.value, new_main_config_text)
 
 

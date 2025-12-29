@@ -108,7 +108,9 @@ async def create_reverse_proxy_config(
 
     virtual_host = models.VirtualHost(virtual_host_name=create_reverse_proxy_config_data.virtual_host_name)
 
-    reverse_proxy_data = create_reverse_proxy_config_data.model_dump(exclude_defaults=True, exclude={"virtual_host_name"})
+    reverse_proxy_data = create_reverse_proxy_config_data.model_dump(
+        exclude_defaults=True, exclude={"virtual_host_name"}
+    )
     reverse_proxy_config = models.ReverseProxyConfig(
         virtual_host=virtual_host,
         **reverse_proxy_data

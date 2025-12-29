@@ -267,7 +267,11 @@ from src.ferron.utils import render_template
 }"""
     ),
 ])
-async def test_render_template(template_type: TemplateType, template_config: TemplateConfig, expected_text: str) -> None:
+async def test_render_template(
+    template_type: TemplateType, 
+    template_config: TemplateConfig, 
+    expected_text: str
+) -> None:
     assert await render_template(template_type, template_config) == expected_text
 
 
