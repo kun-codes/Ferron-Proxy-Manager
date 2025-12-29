@@ -25,6 +25,7 @@ from src.ferron.constants import (
 class TemplateConfig(BaseModel):
     pass
 
+
 class GlobalTemplateConfig(TemplateConfig):
     model_config = ConfigDict(from_attributes=True)
 
@@ -42,17 +43,21 @@ class BaseVirtualHost(TemplateConfig):
 
     virtual_host_name: str
 
+
 class Cache(TemplateConfig):
     cache: bool = DEFAULT_CACHE_ENABLED
     cache_max_age: int = DEFAULT_CACHE_MAX_AGE
 
+
 class CommonReverseProxyConfig(BaseVirtualHost, Cache):
     preserve_host_header: bool = DEFAULT_PRESERVE_HOST_HEADER
+
 
 class CreateReverseProxyConfig(CommonReverseProxyConfig):
     backend_url: str
     use_unix_socket: bool = DEFAULT_USE_UNIX_SOCKET
     unix_socket_path: str | None = None
+
 
 class UpdateReverseProxyConfig(CreateReverseProxyConfig):
     id: int

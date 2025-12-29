@@ -2,15 +2,14 @@
 Utility functions to generate FastAPI response schemas from exception classes.
 This allows error responses to be automatically derived from exception definitions.
 """
+
 from typing import Any, Dict, Type
 
 from fastapi import HTTPException
 
 
 def generate_error_response(
-    exception_class: Type[HTTPException],
-    *args: Any,
-    **kwargs: Any
+    exception_class: Type[HTTPException], *args: Any, **kwargs: Any
 ) -> Dict[int, Dict[str, Any]]:
     """
     will generate a fastapi response schema from an exception class. Useful for OpenAPI documentation
@@ -39,18 +38,7 @@ def generate_error_response(
     else:
         description = str(detail)
 
-    return {
-        status_code: {
-            "description": description,
-            "content": {
-                "application/json": {
-                    "example": {
-                        "detail": detail
-                    }
-                }
-            }
-        }
-    }
+    return {status_code: {"description": description, "content": {"application/json": {"example": {"detail": detail}}}}}
 
 
 def merge_responses(*response_dicts: Dict[int, Dict[str, Any]]) -> Dict[int, Dict[str, Any]]:

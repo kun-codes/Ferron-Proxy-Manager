@@ -32,7 +32,6 @@ def _static_file_to_schema(config: models.StaticFileConfig) -> schemas.UpdateSta
     return schemas.UpdateStaticFileConfig.model_validate(config, from_attributes=True)
 
 
-
 async def create_global_config(
     global_config_data: schemas.GlobalTemplateConfig,
     session: Annotated[AsyncSession, Depends(get_session)],
@@ -56,9 +55,9 @@ async def create_global_config(
     else:
         raise exceptions.GlobalConfigAlreadyExists()
 
+
 async def update_global_config(
-        global_config_data: schemas.GlobalTemplateConfig,
-        session: Annotated[AsyncSession, Depends(get_session)]
+    global_config_data: schemas.GlobalTemplateConfig, session: Annotated[AsyncSession, Depends(get_session)]
 ) -> schemas.GlobalTemplateConfig:
     statement = select(models.GlobalConfig).where(models.GlobalConfig.id == 1)
     result = await session.exec(statement)
@@ -68,7 +67,7 @@ async def update_global_config(
         raise exceptions.ConfigNotFound(config_type="global configuration")
 
     update_data = global_config_data.model_dump(exclude_defaults=True)
-    for field, value  in update_data.items():
+    for field, value in update_data.items():
         setattr(existing_config, field, value)
 
     existing_config_schema = schemas.GlobalTemplateConfig.model_validate(existing_config)
@@ -78,9 +77,8 @@ async def update_global_config(
 
     return existing_config_schema
 
-async def read_global_config(
-        session: Annotated[AsyncSession, Depends(get_session)]
-) -> schemas.GlobalTemplateConfig:
+
+async def read_global_config(session: Annotated[AsyncSession, Depends(get_session)]) -> schemas.GlobalTemplateConfig:
     statement = select(models.GlobalConfig).where(models.GlobalConfig.id == 1)
 
     result = await session.exec(statement)
@@ -92,9 +90,10 @@ async def read_global_config(
     config_schema = schemas.GlobalTemplateConfig.model_validate(config)
     return config_schema
 
+
 async def create_reverse_proxy_config(
-        create_reverse_proxy_config_data: schemas.CreateReverseProxyConfig,
-        session: Annotated[AsyncSession, Depends(get_session)]
+    create_reverse_proxy_config_data: schemas.CreateReverseProxyConfig,
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> schemas.UpdateReverseProxyConfig:
     existing_virtual_host_stmt = select(models.VirtualHost).where(
         models.VirtualHost.virtual_host_name == create_reverse_proxy_config_data.virtual_host_name
@@ -102,19 +101,14 @@ async def create_reverse_proxy_config(
     existing_virtual_host = (await session.exec(existing_virtual_host_stmt)).scalar_one_or_none()
 
     if existing_virtual_host:
-        raise VirtualHostNameAlreadyExists(
-            virtual_host_name=create_reverse_proxy_config_data.virtual_host_name
-        )
+        raise VirtualHostNameAlreadyExists(virtual_host_name=create_reverse_proxy_config_data.virtual_host_name)
 
     virtual_host = models.VirtualHost(virtual_host_name=create_reverse_proxy_config_data.virtual_host_name)
 
     reverse_proxy_data = create_reverse_proxy_config_data.model_dump(
         exclude_defaults=True, exclude={"virtual_host_name"}
     )
-    reverse_proxy_config = models.ReverseProxyConfig(
-        virtual_host=virtual_host,
-        **reverse_proxy_data
-    )
+    reverse_proxy_config = models.ReverseProxyConfig(virtual_host=virtual_host, **reverse_proxy_data)
 
     session.add(virtual_host)
     session.add(reverse_proxy_config)
@@ -122,9 +116,7 @@ async def create_reverse_proxy_config(
     try:
         await session.flush()
     except sqlalchemy.exc.IntegrityError:
-        raise VirtualHostNameAlreadyExists(
-            virtual_host_name=create_reverse_proxy_config_data.virtual_host_name
-        )
+        raise VirtualHostNameAlreadyExists(virtual_host_name=create_reverse_proxy_config_data.virtual_host_name)
 
     reverse_proxy_config_schema = _reverse_proxy_to_schema(reverse_proxy_config)
 
@@ -134,9 +126,9 @@ async def create_reverse_proxy_config(
 
     return reverse_proxy_config_schema
 
+
 async def update_reverse_proxy_config(
-        reverse_proxy_config_data: schemas.UpdateReverseProxyConfig,
-        session: Annotated[AsyncSession, Depends(get_session)]
+    reverse_proxy_config_data: schemas.UpdateReverseProxyConfig, session: Annotated[AsyncSession, Depends(get_session)]
 ) -> schemas.UpdateReverseProxyConfig:
     # have to do this to check if id specified in reverse_proxy_config_data exists
     statement = (
@@ -161,9 +153,7 @@ async def update_reverse_proxy_config(
         conflicting_virtual_host = (await session.exec(conflicting_virtual_host_stmt)).scalar_one_or_none()
 
         if conflicting_virtual_host and conflicting_virtual_host.id != existing_config.virtual_host.id:
-            raise VirtualHostNameAlreadyExists(
-                virtual_host_name=reverse_proxy_config_data.virtual_host_name
-            )
+            raise VirtualHostNameAlreadyExists(virtual_host_name=reverse_proxy_config_data.virtual_host_name)
 
         existing_config.virtual_host.virtual_host_name = reverse_proxy_config_data.virtual_host_name
 
@@ -174,9 +164,7 @@ async def update_reverse_proxy_config(
     try:
         await session.flush()
     except sqlalchemy.exc.IntegrityError:
-        raise VirtualHostNameAlreadyExists(
-            virtual_host_name=reverse_proxy_config_data.virtual_host_name
-        )
+        raise VirtualHostNameAlreadyExists(virtual_host_name=reverse_proxy_config_data.virtual_host_name)
 
     existing_config_schema = _reverse_proxy_to_schema(existing_config)
     await write_reverse_proxy_config_to_file(existing_config_schema)
@@ -185,9 +173,10 @@ async def update_reverse_proxy_config(
 
     return existing_config_schema
 
+
 async def read_reverse_proxy_config(
-        reverse_proxy_id: int,
-        session: Annotated[AsyncSession, Depends(get_session)],
+    reverse_proxy_id: int,
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> schemas.UpdateReverseProxyConfig:
     statement = (
         select(models.ReverseProxyConfig)
@@ -204,8 +193,9 @@ async def read_reverse_proxy_config(
     config_schema = _reverse_proxy_to_schema(config)
     return config_schema
 
+
 async def read_all_reverse_proxy_config(
-        session: Annotated[AsyncSession, Depends(get_session)]
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> list[schemas.UpdateReverseProxyConfig]:
     statement = select(models.ReverseProxyConfig).options(selectinload(models.ReverseProxyConfig.virtual_host))
 
@@ -216,8 +206,7 @@ async def read_all_reverse_proxy_config(
 
 
 async def delete_reverse_proxy_config(
-        reverse_proxy_id: int,
-        session: Annotated[AsyncSession, Depends(get_session)]
+    reverse_proxy_id: int, session: Annotated[AsyncSession, Depends(get_session)]
 ) -> schemas.UpdateReverseProxyConfig:
     statement = (
         select(models.ReverseProxyConfig)
@@ -246,8 +235,8 @@ async def delete_reverse_proxy_config(
 
 
 async def create_load_balancer_config(
-        create_load_balancer_config_data: schemas.CreateLoadBalancerConfig,
-        session: Annotated[AsyncSession, Depends(get_session)]
+    create_load_balancer_config_data: schemas.CreateLoadBalancerConfig,
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> schemas.UpdateLoadBalancerConfig:
     existing_virtual_host_stmt = select(models.VirtualHost).where(
         models.VirtualHost.virtual_host_name == create_load_balancer_config_data.virtual_host_name
@@ -255,20 +244,14 @@ async def create_load_balancer_config(
     existing_virtual_host = (await session.exec(existing_virtual_host_stmt)).scalar_one_or_none()
 
     if existing_virtual_host:
-        raise VirtualHostNameAlreadyExists(
-            virtual_host_name=create_load_balancer_config_data.virtual_host_name
-        )
+        raise VirtualHostNameAlreadyExists(virtual_host_name=create_load_balancer_config_data.virtual_host_name)
 
     virtual_host = models.VirtualHost(virtual_host_name=create_load_balancer_config_data.virtual_host_name)
 
     load_balancer_data = create_load_balancer_config_data.model_dump(
-        exclude_defaults=True,
-        exclude={"virtual_host_name", "backend_urls"}
+        exclude_defaults=True, exclude={"virtual_host_name", "backend_urls"}
     )
-    load_balancer_config = models.LoadBalancerConfig(
-        virtual_host=virtual_host,
-        **load_balancer_data
-    )
+    load_balancer_config = models.LoadBalancerConfig(virtual_host=virtual_host, **load_balancer_data)
 
     session.add(virtual_host)
     session.add(load_balancer_config)
@@ -276,16 +259,12 @@ async def create_load_balancer_config(
     try:
         await session.flush()
     except sqlalchemy.exc.IntegrityError:
-        raise VirtualHostNameAlreadyExists(
-            virtual_host_name=create_load_balancer_config_data.virtual_host_name
-        )
+        raise VirtualHostNameAlreadyExists(virtual_host_name=create_load_balancer_config_data.virtual_host_name)
 
     # Add backend URLs
     for backend_url in create_load_balancer_config_data.backend_urls:
         backend_record = models.LoadBalancerBackendURL(
-            virtual_host=virtual_host,
-            used_in_load_balancer=load_balancer_config.id,
-            backend_url=backend_url
+            virtual_host=virtual_host, used_in_load_balancer=load_balancer_config.id, backend_url=backend_url
         )
         session.add(backend_record)
 
@@ -293,10 +272,7 @@ async def create_load_balancer_config(
 
     # backend_urls is a property of the LoadBalancerConfig model that relies on a relationship,
     # have to refresh to get the backend_urls_relationship loaded.
-    await session.refresh(
-        load_balancer_config,
-        attribute_names=["backend_urls_relationship", "virtual_host"]
-    )
+    await session.refresh(load_balancer_config, attribute_names=["backend_urls_relationship", "virtual_host"])
 
     load_balancer_config_schema = _load_balancer_to_schema(load_balancer_config)
 
@@ -308,14 +284,13 @@ async def create_load_balancer_config(
 
 
 async def update_load_balancer_config(
-        load_balancer_config_data: schemas.UpdateLoadBalancerConfig,
-        session: Annotated[AsyncSession, Depends(get_session)]
+    load_balancer_config_data: schemas.UpdateLoadBalancerConfig, session: Annotated[AsyncSession, Depends(get_session)]
 ) -> schemas.UpdateLoadBalancerConfig:
     statement = (
         select(models.LoadBalancerConfig)
         .options(
             selectinload(models.LoadBalancerConfig.virtual_host),
-            selectinload(models.LoadBalancerConfig.backend_urls_relationship)
+            selectinload(models.LoadBalancerConfig.backend_urls_relationship),
         )
         .where(models.LoadBalancerConfig.id == load_balancer_config_data.id)
     )
@@ -336,15 +311,12 @@ async def update_load_balancer_config(
         conflicting_virtual_host = (await session.exec(conflicting_virtual_host_stmt)).scalar_one_or_none()
 
         if conflicting_virtual_host and conflicting_virtual_host.id != existing_config.virtual_host.id:
-            raise VirtualHostNameAlreadyExists(
-                virtual_host_name=load_balancer_config_data.virtual_host_name
-            )
+            raise VirtualHostNameAlreadyExists(virtual_host_name=load_balancer_config_data.virtual_host_name)
 
         existing_config.virtual_host.virtual_host_name = load_balancer_config_data.virtual_host_name
 
     update_data = load_balancer_config_data.model_dump(
-        exclude_defaults=True,
-        exclude={"virtual_host_name", "id", "backend_urls"}
+        exclude_defaults=True, exclude={"virtual_host_name", "id", "backend_urls"}
     )
     for field, value in update_data.items():
         setattr(existing_config, field, value)
@@ -357,18 +329,14 @@ async def update_load_balancer_config(
 
     for backend_url in load_balancer_config_data.backend_urls:
         backend_record = models.LoadBalancerBackendURL(
-            virtual_host=existing_config.virtual_host,
-            used_in_load_balancer=existing_config.id,
-            backend_url=backend_url
+            virtual_host=existing_config.virtual_host, used_in_load_balancer=existing_config.id, backend_url=backend_url
         )
         session.add(backend_record)
 
     try:
         await session.flush()
     except sqlalchemy.exc.IntegrityError:
-        raise VirtualHostNameAlreadyExists(
-            virtual_host_name=load_balancer_config_data.virtual_host_name
-        )
+        raise VirtualHostNameAlreadyExists(virtual_host_name=load_balancer_config_data.virtual_host_name)
 
     existing_config_schema = _load_balancer_to_schema(existing_config)
     await write_load_balancer_config_to_file(existing_config_schema)
@@ -379,14 +347,14 @@ async def update_load_balancer_config(
 
 
 async def read_load_balancer_config(
-        load_balancer_id: int,
-        session: Annotated[AsyncSession, Depends(get_session)],
+    load_balancer_id: int,
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> schemas.UpdateLoadBalancerConfig:
     statement = (
         select(models.LoadBalancerConfig)
         .options(
             selectinload(models.LoadBalancerConfig.virtual_host),
-            selectinload(models.LoadBalancerConfig.backend_urls_relationship)
+            selectinload(models.LoadBalancerConfig.backend_urls_relationship),
         )
         .where(models.LoadBalancerConfig.id == load_balancer_id)
     )
@@ -402,11 +370,11 @@ async def read_load_balancer_config(
 
 
 async def read_all_load_balancer_config(
-        session: Annotated[AsyncSession, Depends(get_session)]
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> list[schemas.UpdateLoadBalancerConfig]:
     statement = select(models.LoadBalancerConfig).options(
         selectinload(models.LoadBalancerConfig.virtual_host),
-        selectinload(models.LoadBalancerConfig.backend_urls_relationship)
+        selectinload(models.LoadBalancerConfig.backend_urls_relationship),
     )
 
     result = await session.exec(statement)
@@ -416,14 +384,13 @@ async def read_all_load_balancer_config(
 
 
 async def delete_load_balancer_config(
-        load_balancer_id: int,
-        session: Annotated[AsyncSession, Depends(get_session)]
+    load_balancer_id: int, session: Annotated[AsyncSession, Depends(get_session)]
 ) -> schemas.UpdateLoadBalancerConfig:
     statement = (
         select(models.LoadBalancerConfig)
         .options(
             selectinload(models.LoadBalancerConfig.virtual_host),
-            selectinload(models.LoadBalancerConfig.backend_urls_relationship)
+            selectinload(models.LoadBalancerConfig.backend_urls_relationship),
         )
         .where(models.LoadBalancerConfig.id == load_balancer_id)
     )
@@ -446,8 +413,8 @@ async def delete_load_balancer_config(
 
 
 async def create_static_file_config(
-        create_static_file_config_data: schemas.CreateStaticFileConfig,
-        session: Annotated[AsyncSession, Depends(get_session)]
+    create_static_file_config_data: schemas.CreateStaticFileConfig,
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> schemas.UpdateStaticFileConfig:
     existing_virtual_host_stmt = select(models.VirtualHost).where(
         models.VirtualHost.virtual_host_name == create_static_file_config_data.virtual_host_name
@@ -455,20 +422,12 @@ async def create_static_file_config(
     existing_virtual_host = (await session.exec(existing_virtual_host_stmt)).scalar_one_or_none()
 
     if existing_virtual_host:
-        raise VirtualHostNameAlreadyExists(
-            virtual_host_name=create_static_file_config_data.virtual_host_name
-        )
+        raise VirtualHostNameAlreadyExists(virtual_host_name=create_static_file_config_data.virtual_host_name)
 
     virtual_host = models.VirtualHost(virtual_host_name=create_static_file_config_data.virtual_host_name)
 
-    static_file_data = create_static_file_config_data.model_dump(
-        exclude_defaults=True,
-        exclude={"virtual_host_name"}
-    )
-    static_file_config = models.StaticFileConfig(
-        virtual_host=virtual_host,
-        **static_file_data
-    )
+    static_file_data = create_static_file_config_data.model_dump(exclude_defaults=True, exclude={"virtual_host_name"})
+    static_file_config = models.StaticFileConfig(virtual_host=virtual_host, **static_file_data)
 
     session.add(virtual_host)
     session.add(static_file_config)
@@ -477,9 +436,7 @@ async def create_static_file_config(
     try:
         await session.flush()
     except sqlalchemy.exc.IntegrityError:
-        raise VirtualHostNameAlreadyExists(
-            virtual_host_name=create_static_file_config_data.virtual_host_name
-        )
+        raise VirtualHostNameAlreadyExists(virtual_host_name=create_static_file_config_data.virtual_host_name)
 
     static_file_config_schema = _static_file_to_schema(static_file_config)
 
@@ -491,8 +448,7 @@ async def create_static_file_config(
 
 
 async def update_static_file_config(
-        static_file_config_data: schemas.UpdateStaticFileConfig,
-        session: Annotated[AsyncSession, Depends(get_session)]
+    static_file_config_data: schemas.UpdateStaticFileConfig, session: Annotated[AsyncSession, Depends(get_session)]
 ) -> schemas.UpdateStaticFileConfig:
     statement = (
         select(models.StaticFileConfig)
@@ -516,25 +472,18 @@ async def update_static_file_config(
         conflicting_virtual_host = (await session.exec(conflicting_virtual_host_stmt)).scalar_one_or_none()
 
         if conflicting_virtual_host and conflicting_virtual_host.id != existing_config.virtual_host.id:
-            raise VirtualHostNameAlreadyExists(
-                virtual_host_name=static_file_config_data.virtual_host_name
-            )
+            raise VirtualHostNameAlreadyExists(virtual_host_name=static_file_config_data.virtual_host_name)
 
         existing_config.virtual_host.virtual_host_name = static_file_config_data.virtual_host_name
 
-    update_data = static_file_config_data.model_dump(
-        exclude_defaults=True,
-        exclude={"virtual_host_name", "id"}
-    )
+    update_data = static_file_config_data.model_dump(exclude_defaults=True, exclude={"virtual_host_name", "id"})
     for field, value in update_data.items():
         setattr(existing_config, field, value)
 
     try:
         await session.flush()
     except sqlalchemy.exc.IntegrityError:
-        raise VirtualHostNameAlreadyExists(
-            virtual_host_name=static_file_config_data.virtual_host_name
-        )
+        raise VirtualHostNameAlreadyExists(virtual_host_name=static_file_config_data.virtual_host_name)
 
     existing_config_schema = _static_file_to_schema(existing_config)
     await write_static_file_config_to_file(existing_config_schema)
@@ -545,8 +494,8 @@ async def update_static_file_config(
 
 
 async def read_static_file_config(
-        static_file_id: int,
-        session: Annotated[AsyncSession, Depends(get_session)],
+    static_file_id: int,
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> schemas.UpdateStaticFileConfig:
     statement = (
         select(models.StaticFileConfig)
@@ -565,11 +514,9 @@ async def read_static_file_config(
 
 
 async def read_all_static_file_config(
-        session: Annotated[AsyncSession, Depends(get_session)]
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> list[schemas.UpdateStaticFileConfig]:
-    statement = select(models.StaticFileConfig).options(
-        selectinload(models.StaticFileConfig.virtual_host)
-    )
+    statement = select(models.StaticFileConfig).options(selectinload(models.StaticFileConfig.virtual_host))
 
     result = await session.exec(statement)
     configs = result.scalars().all()
@@ -578,8 +525,7 @@ async def read_all_static_file_config(
 
 
 async def delete_static_file_config(
-        static_file_id: int,
-        session: Annotated[AsyncSession, Depends(get_session)]
+    static_file_id: int, session: Annotated[AsyncSession, Depends(get_session)]
 ) -> schemas.UpdateStaticFileConfig:
     statement = (
         select(models.StaticFileConfig)
@@ -605,4 +551,3 @@ async def delete_static_file_config(
     await delete_static_file_config_from_file(static_file_id)
 
     return _static_file_to_schema(config)
-

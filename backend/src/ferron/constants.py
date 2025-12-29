@@ -33,9 +33,11 @@ class TemplateType(Enum):
     REVERSE_PROXY_CONFIG = "reverse_proxy.j2"
     STATIC_FILE_CONFIG = "static_file.j2"
 
+
 SUB_CONFIG_PATH = "/etc/ferron-proxy-manager"
+
+
 class ConfigFileLocation(Enum):
     # this is where all configs for global and other virtual hosts are included using include statement
     MAIN_CONFIG = f"{SUB_CONFIG_PATH}/main.kdl"
     GLOBAL_CONFIG = f"{SUB_CONFIG_PATH}/global.kdl"
-

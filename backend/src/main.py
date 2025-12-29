@@ -37,16 +37,17 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 
     has_included_main_config = False
     for line in content.splitlines():
-        if line.strip() == f"include \"{ConfigFileLocation.MAIN_CONFIG.value}\"":
+        if line.strip() == f'include "{ConfigFileLocation.MAIN_CONFIG.value}"':
             has_included_main_config = True
             break
 
     if not has_included_main_config:
         async with aiofiles.open("/etc/ferron.kdl", "a") as f:
-            await f.write(f"include \"{ConfigFileLocation.MAIN_CONFIG.value}\"\n")
+            await f.write(f'include "{ConfigFileLocation.MAIN_CONFIG.value}"\n')
 
     await create_db_and_tables()
     yield
+
 
 app = FastAPI(
     title=settings.app_name,
@@ -56,6 +57,7 @@ app = FastAPI(
 )
 app.state.limiter = rate_limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 
 # override the default exception handler to return a custom response
 # from: https://thedkpatel.medium.com/rate-limiting-with-fastapi-an-in-depth-guide-c4d64a776b83

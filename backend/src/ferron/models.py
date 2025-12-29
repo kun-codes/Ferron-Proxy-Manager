@@ -48,19 +48,16 @@ class VirtualHost(SQLModel, table=True):
     reverse_proxy_config: Optional["ReverseProxyConfig"] = Relationship(
         back_populates="virtual_host",
         # uselist=False because one-to-one relationship
-        sa_relationship_kwargs={"cascade": "all, delete-orphan", "uselist": False}
+        sa_relationship_kwargs={"cascade": "all, delete-orphan", "uselist": False},
     )
     static_file_config: Optional["StaticFileConfig"] = Relationship(
-        back_populates="virtual_host",
-        sa_relationship_kwargs={"cascade": "all, delete-orphan", "uselist": False}
+        back_populates="virtual_host", sa_relationship_kwargs={"cascade": "all, delete-orphan", "uselist": False}
     )
     load_balancer_config: Optional["LoadBalancerConfig"] = Relationship(
-        back_populates="virtual_host",
-        sa_relationship_kwargs={"cascade": "all, delete-orphan", "uselist": False}
+        back_populates="virtual_host", sa_relationship_kwargs={"cascade": "all, delete-orphan", "uselist": False}
     )
     load_balancer_backends: List["LoadBalancerBackendURL"] = Relationship(
-        back_populates="virtual_host",
-        sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+        back_populates="virtual_host", sa_relationship_kwargs={"cascade": "all, delete-orphan"}
     )
 
 
@@ -80,7 +77,7 @@ class StaticFileConfig(Cache, SQLModel, table=True):
         back_populates="static_file_config",
         # uselist=False because one-to-one relationship
         # lazy=selectin because https://stackoverflow.com/a/74256068
-        sa_relationship_kwargs={"lazy": "selectin", "uselist": False}
+        sa_relationship_kwargs={"lazy": "selectin", "uselist": False},
     )
     static_files_dir: str = Field(default=None)
     use_spa: bool = Field(default=DEFAULT_USE_SPA)
@@ -108,7 +105,7 @@ class ReverseProxyConfig(CommonReverseProxyConfig, SQLModel, table=True):
         back_populates="reverse_proxy_config",
         # uselist=False because one-to-one relationship
         # lazy=selectin because https://stackoverflow.com/a/74256068
-        sa_relationship_kwargs={"lazy": "selectin", "uselist": False}
+        sa_relationship_kwargs={"lazy": "selectin", "uselist": False},
     )
     backend_url: str = Field(default=None)
     use_unix_socket: bool = Field(default=DEFAULT_USE_UNIX_SOCKET)
@@ -130,7 +127,7 @@ class LoadBalancerBackendURL(SQLModel, table=True):
         back_populates="load_balancer_backends",
         # uselist=False because one-to-one relationship
         # lazy=selectin because https://stackoverflow.com/a/74256068
-        sa_relationship_kwargs={"lazy": "selectin", "uselist": False}
+        sa_relationship_kwargs={"lazy": "selectin", "uselist": False},
     )
     used_in_load_balancer: int = Field(
         sa_column=Column(Integer, ForeignKey("ferron_load_balancer_config.id", ondelete="CASCADE"), nullable=False)
@@ -151,11 +148,11 @@ class LoadBalancerConfig(CommonReverseProxyConfig, SQLModel, table=True):
         back_populates="load_balancer_config",
         # uselist=False because one-to-one relationship
         # lazy=selectin because https://stackoverflow.com/a/74256068
-        sa_relationship_kwargs={"lazy": "selectin", "uselist": False}
+        sa_relationship_kwargs={"lazy": "selectin", "uselist": False},
     )
     backend_urls_relationship: List[LoadBalancerBackendURL] = Relationship(
         back_populates="load_balancer_relationship",
-        sa_relationship_kwargs={"cascade": "all, delete-orphan", "lazy": "selectin"}
+        sa_relationship_kwargs={"cascade": "all, delete-orphan", "lazy": "selectin"},
     )
     lb_health_check: bool = Field(default=DEFAULT_LB_HEALTH_CHECK)
     lb_health_check_max_fails: int = Field(default=DEFAULT_LB_HEALTH_CHECK_MAX_FAILS)

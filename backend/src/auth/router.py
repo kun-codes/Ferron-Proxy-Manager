@@ -24,13 +24,11 @@ router = APIRouter(prefix="/auth", tags=["auth"])
     "/signup",
     response_model=schemas.User,
     status_code=status.HTTP_201_CREATED,
-    responses=generate_error_response(UserAlreadyExistsException, "User with same credentials already exists")
+    responses=generate_error_response(UserAlreadyExistsException, "User with same credentials already exists"),
 )
 @rate_limiter.limit("3/15minute")
 async def signup(
-    user_create: schemas.UserCreate,
-    db: Annotated[AsyncSession, Depends(get_session)],
-    request: Request
+    user_create: schemas.UserCreate, db: Annotated[AsyncSession, Depends(get_session)], request: Request
 ) -> schemas.User:
     user = await service.create_user(db, user_create)
     return user
@@ -39,23 +37,19 @@ async def signup(
 @router.post(
     "/login",
     response_model=schemas.Token,
-    responses=generate_error_response(InvalidCredentialsException, "Invalid username or password")
+    responses=generate_error_response(InvalidCredentialsException, "Invalid username or password"),
 )
 @rate_limiter.limit("5/15minute")
 async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: Annotated[AsyncSession, Depends(get_session)],
-    request: Request
+    request: Request,
 ) -> schemas.Token:
     user = await service.authenticate_user(db, form_data.username, form_data.password)
     return await service.create_token_for_user(db, user)
 
 
-@router.get(
-    "/me",
-    response_model=schemas.User,
-    responses=generate_error_response(InvalidTokenException)
-)
+@router.get("/me", response_model=schemas.User, responses=generate_error_response(InvalidTokenException))
 async def get_current_user_info(
     current_user: Annotated[schemas.User, Depends(get_current_user)],
 ) -> schemas.User:
@@ -66,15 +60,12 @@ async def get_current_user_info(
     "/token/refresh",
     response_model=schemas.Token,
     responses=merge_responses(
-        generate_error_response(InvalidTokenException),
-        generate_error_response(UserNotFoundException, "User not found")
-    )
+        generate_error_response(InvalidTokenException), generate_error_response(UserNotFoundException, "User not found")
+    ),
 )
 @rate_limiter.limit("10/15minute")
 async def refresh_token(
-    refresh_data: schemas.RefreshTokenRequest,
-    db: Annotated[AsyncSession, Depends(get_session)],
-    request: Request
+    refresh_data: schemas.RefreshTokenRequest, db: Annotated[AsyncSession, Depends(get_session)], request: Request
 ) -> schemas.Token:
     """
     refresh access token using a valid refresh token and implements token rotation
@@ -85,7 +76,7 @@ async def refresh_token(
 @router.post(
     "/logout",
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=generate_error_response(InvalidTokenException, "Refresh token not found or does not belong to this user")
+    responses=generate_error_response(InvalidTokenException, "Refresh token not found or does not belong to this user"),
 )
 async def logout(
     current_user: Annotated[schemas.User, Depends(get_current_user)],
@@ -103,9 +94,7 @@ async def logout(
 
 
 @router.post(
-    "/logout/all",
-    status_code=status.HTTP_204_NO_CONTENT,
-    responses=generate_error_response(InvalidTokenException)
+    "/logout/all", status_code=status.HTTP_204_NO_CONTENT, responses=generate_error_response(InvalidTokenException)
 )
 async def logout_all_devices(
     current_user: Annotated[schemas.User, Depends(get_current_user)],

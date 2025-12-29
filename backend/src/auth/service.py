@@ -63,28 +63,18 @@ async def authenticate_user(db: AsyncSession, username: str, password: str) -> m
 
 async def create_token_for_user(db: AsyncSession, user: models.User) -> schemas.Token:
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
-    )
+    access_token = create_access_token(data={"sub": user.username}, expires_delta=access_token_expires)
 
     refresh_token_expires = timedelta(minutes=REFRESH_TOKEN_EXPIRE_MINUTES)
-    refresh_token = create_refresh_token(
-        data={"sub": user.username}, expires_delta=refresh_token_expires
-    )
+    refresh_token = create_refresh_token(data={"sub": user.username}, expires_delta=refresh_token_expires)
 
     db_refresh_token = models.RefreshToken(
-        token=refresh_token,
-        user_id=user.id,
-        expires_at=datetime.now(timezone.utc) + refresh_token_expires
+        token=refresh_token, user_id=user.id, expires_at=datetime.now(timezone.utc) + refresh_token_expires
     )
     db.add(db_refresh_token)
     await db.commit()
 
-    return schemas.Token(
-        access_token=access_token,
-        refresh_token=refresh_token,
-        token_type="bearer"
-    )
+    return schemas.Token(access_token=access_token, refresh_token=refresh_token, token_type="bearer")
 
 
 async def get_user_from_token(db: AsyncSession, token: str) -> models.User:
@@ -145,35 +135,25 @@ async def refresh_access_token(db: AsyncSession, refresh_token: str) -> schemas.
         raise UserNotFoundException("User not found")
 
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    new_access_token = create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
-    )
+    new_access_token = create_access_token(data={"sub": user.username}, expires_delta=access_token_expires)
 
     refresh_token_expires = timedelta(minutes=REFRESH_TOKEN_EXPIRE_MINUTES)
-    new_refresh_token = create_refresh_token(
-        data={"sub": user.username}, expires_delta=refresh_token_expires
-    )
+    new_refresh_token = create_refresh_token(data={"sub": user.username}, expires_delta=refresh_token_expires)
 
     # token rotation
     await db.delete(token_in_db)
     db_refresh_token = models.RefreshToken(
-        token=new_refresh_token,
-        user_id=user.id,
-        expires_at=datetime.now(timezone.utc) + refresh_token_expires
+        token=new_refresh_token, user_id=user.id, expires_at=datetime.now(timezone.utc) + refresh_token_expires
     )
     db.add(db_refresh_token)
     await db.commit()
 
-    return schemas.Token(
-        access_token=new_access_token,
-        refresh_token=new_refresh_token,
-        token_type="bearer"
-    )
+    return schemas.Token(access_token=new_access_token, refresh_token=new_refresh_token, token_type="bearer")
+
 
 async def revoke_user_refresh_token(db: AsyncSession, user_id: int, refresh_token: str) -> None:
     statement = select(models.RefreshToken).where(
-        models.RefreshToken.token == refresh_token,
-        models.RefreshToken.user_id == user_id
+        models.RefreshToken.token == refresh_token, models.RefreshToken.user_id == user_id
     )
     result = await db.exec(statement)
     token_in_db = result.scalar_one_or_none()

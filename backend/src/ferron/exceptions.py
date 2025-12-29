@@ -12,10 +12,7 @@ class GlobalConfigAlreadyExists(FerronException):
     def __init__(self, message: str = "Global configuration already exists") -> None:
         super().__init__(
             status_code=status.HTTP_409_CONFLICT,
-            detail={
-                "error_code": "global_config_already_exists",
-                "message": message
-            }
+            detail={"error_code": "global_config_already_exists", "message": message},
         )
 
 
@@ -23,10 +20,7 @@ class ConfigNotFound(FerronException):
     def __init__(self, config_type: str = "Configuration") -> None:
         super().__init__(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail={
-                "error_code": "config_not_found",
-                "message": f"{config_type} not found"
-            }
+            detail={"error_code": "config_not_found", "message": f"{config_type} not found"},
         )
 
 
@@ -36,8 +30,8 @@ class VirtualHostNameAlreadyExists(FerronException):
             status_code=status.HTTP_409_CONFLICT,
             detail={
                 "error_code": "virtual_host_name_already_exists",
-                "message": f"Virtual host name '{virtual_host_name}' already exists"
-            }
+                "message": f"Virtual host name '{virtual_host_name}' already exists",
+            },
         )
 
 
@@ -47,19 +41,18 @@ class TemplateConfigAndTemplateTypeMismatch(HTTPException):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={
                 "error_code": "template_config_and_template_type_mismatch",
-                "message": f"{config.__class__.__name__} is not compatible with template {template_name.value}"
-            }
+                "message": f"{config.__class__.__name__} is not compatible with template {template_name.value}",
+            },
         )
+
 
 class FileSystemException(HTTPException):
     pass
 
+
 class FileNotFound(FileSystemException):
-    def __init__(self, file_name: str)-> None:
+    def __init__(self, file_name: str) -> None:
         super().__init__(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "error_code": "file_not_found",
-                "message": f"File '{file_name}' not found"
-            }
+            detail={"error_code": "file_not_found", "message": f"File '{file_name}' not found"},
         )

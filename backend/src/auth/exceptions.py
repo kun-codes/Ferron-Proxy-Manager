@@ -9,10 +9,7 @@ class AuthException(HTTPException):
 class InvalidCredentialsException(AuthException):
     def __init__(self, message: str = "Invalid credentials") -> None:
         super().__init__(
-            detail={
-                "error_code": "invalid_credentials",
-                "message": message
-            },
+            detail={"error_code": "invalid_credentials", "message": message},
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
         self.headers = {"WWW-Authenticate": "Bearer"}
@@ -21,10 +18,7 @@ class InvalidCredentialsException(AuthException):
 class UserAlreadyExistsException(AuthException):
     def __init__(self, message: str = "User already exists") -> None:
         super().__init__(
-            detail={
-                "error_code": "user_already_exists",
-                "message": message
-            },
+            detail={"error_code": "user_already_exists", "message": message},
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
@@ -32,10 +26,7 @@ class UserAlreadyExistsException(AuthException):
 class InvalidTokenException(AuthException):
     def __init__(self, message: str = "Could not validate token") -> None:
         super().__init__(
-            detail={
-                "error_code": "invalid_token",
-                "message": message
-            },
+            detail={"error_code": "invalid_token", "message": message},
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
         self.headers = {"WWW-Authenticate": "Bearer"}
@@ -44,9 +35,6 @@ class InvalidTokenException(AuthException):
 class UserNotFoundException(AuthException):
     def __init__(self, message: str = "User not found") -> None:
         super().__init__(
-            detail={
-                "error_code": "user_not_found",
-                "message": message
-            },
+            detail={"error_code": "user_not_found", "message": message},
             status_code=status.HTTP_404_NOT_FOUND,
         )
