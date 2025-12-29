@@ -15,7 +15,6 @@ from src.utils import generate_error_response, merge_responses
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-# TODO: add rate limit exceeded exception response to this route
 @router.post(
     "/signup",
     response_model=schemas.User,
@@ -32,7 +31,6 @@ async def signup(
     return user
 
 
-# TODO: add rate limit exceeded exception response to this route
 @router.post(
     "/login",
     response_model=schemas.Token,
@@ -59,7 +57,6 @@ async def get_current_user_info(
     return current_user
 
 
-# TODO: add rate limit exceeded exception response to this route
 @router.post(
     "/token/refresh",
     response_model=schemas.Token,
