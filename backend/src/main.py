@@ -1,23 +1,22 @@
 import asyncio
 import os
+from contextlib import asynccontextmanager
 from typing import Annotated
 
 import aiofiles
 from fastapi import Depends, FastAPI, status
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from contextlib import asynccontextmanager
-
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from src.auth import schemas
 from src.auth.dependencies import get_current_user
 from src.auth.router import router as auth_router
-from src.ferron.router import router as config_router
 from src.config import settings
 from src.database import create_db_and_tables
 from src.ferron.constants import ConfigFileLocation
+from src.ferron.router import router as config_router
 from src.service import rate_limiter
 
 

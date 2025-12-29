@@ -2,7 +2,7 @@
 Utility functions to generate FastAPI response schemas from exception classes.
 This allows error responses to be automatically derived from exception definitions.
 """
-from typing import Type, Dict, Any
+from typing import Any, Dict, Type
 
 from fastapi import HTTPException
 
@@ -30,15 +30,15 @@ def generate_error_response(
         )
     """
     exc_instance = exception_class(*args, **kwargs)
-    
+
     status_code = exc_instance.status_code
     detail = exc_instance.detail
-    
+
     if isinstance(detail, dict) and "message" in detail:
         description = detail["message"]
     else:
         description = str(detail)
-    
+
     return {
         status_code: {
             "description": description,

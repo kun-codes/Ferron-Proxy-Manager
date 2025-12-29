@@ -5,7 +5,7 @@ from sqlmodel import Field, SQLModel
 
 class User(SQLModel, table=True):
     __tablename__ = "users"
-    
+
     id: int | None = Field(default=None, primary_key=True)
     username: str = Field(unique=True, index=True)
     email: str = Field(unique=True, index=True)
@@ -14,7 +14,7 @@ class User(SQLModel, table=True):
 
 class RefreshToken(SQLModel, table=True):
     __tablename__ = "refresh_tokens"
-    
+
     id: int | None = Field(default=None, primary_key=True)
     token: str = Field(unique=True, index=True)
     user_id: int = Field(foreign_key="users.id")

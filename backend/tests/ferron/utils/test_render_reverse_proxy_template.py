@@ -1,14 +1,12 @@
 import pytest
 
 from src.ferron.constants import (
-    TemplateType,
     DEFAULT_CACHE_MAX_AGE,
-    DEFAULT_USE_UNIX_SOCKET,
-    DEFAULT_PRESERVE_HOST_HEADER,
+    TemplateType,
 )
-from src.ferron.utils import render_template
-from src.ferron.schemas import TemplateConfig, UpdateReverseProxyConfig
 from src.ferron.exceptions import TemplateConfigAndTemplateTypeMismatch
+from src.ferron.schemas import TemplateConfig, UpdateReverseProxyConfig
+from src.ferron.utils import render_template
 
 
 @pytest.mark.asyncio
@@ -239,10 +237,10 @@ async def test_render_reverse_proxy_template(template_type: TemplateType, templa
 @pytest.mark.asyncio
 async def test_render_reverse_proxy_template_type_mismatch():
     invalid_config = TemplateConfig()
-    
+
     with pytest.raises(TemplateConfigAndTemplateTypeMismatch) as exc_info:
         await render_template(TemplateType.REVERSE_PROXY_CONFIG, invalid_config)
-    
+
     # Verify the exception details
     assert exc_info.value.status_code == 500
     assert "template_config_and_template_type_mismatch" in str(exc_info.value.detail)

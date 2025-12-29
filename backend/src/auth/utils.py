@@ -6,7 +6,6 @@ from pwdlib import PasswordHash
 from src.auth.config import auth_settings
 from src.auth.constants import ALGORITHM
 
-
 password_hash = PasswordHash.recommended()
 
 

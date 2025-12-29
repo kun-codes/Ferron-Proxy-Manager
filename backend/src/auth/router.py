@@ -5,9 +5,14 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel.ext.asyncio.session import AsyncSession
 from starlette.requests import Request
 
-from src.auth import schemas, service, models
+from src.auth import schemas, service
 from src.auth.dependencies import get_current_user
-from src.auth.exceptions import UserAlreadyExistsException, InvalidCredentialsException, InvalidTokenException, UserNotFoundException
+from src.auth.exceptions import (
+    InvalidCredentialsException,
+    InvalidTokenException,
+    UserAlreadyExistsException,
+    UserNotFoundException,
+)
 from src.database import get_session
 from src.service import rate_limiter
 from src.utils import generate_error_response, merge_responses
@@ -108,7 +113,7 @@ async def logout_all_devices(
 ) -> None:
     """
     logs out from all devices by revoking all refresh tokens for the user
-    
+
     takes:
     - Access token only from Authorization header
     """

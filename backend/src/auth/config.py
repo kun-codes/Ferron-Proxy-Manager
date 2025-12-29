@@ -8,7 +8,7 @@ class AuthSettings(BaseSettings):
     # usage of this is discouraged: https://docs.pydantic.dev/latest/concepts/fields/
     secret_key: str = Field(description="Secret key for signing access tokens")
     refresh_secret_key: str = Field(description="Secret key for signing refresh tokens")
-    
+
     model_config = SettingsConfigDict(
         env_file=str(Path(__file__).resolve().parents[2] / ".env"),
         env_prefix="AUTH_",

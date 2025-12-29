@@ -5,8 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.auth.dependencies import get_current_user
 from src.database import get_session
-from src.ferron import service
-from src.ferron import schemas
+from src.ferron import schemas, service
 from src.ferron.exceptions import ConfigNotFound, GlobalConfigAlreadyExists, VirtualHostNameAlreadyExists
 from src.utils import generate_error_response
 

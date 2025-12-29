@@ -1,27 +1,27 @@
 from typing import List, Optional
 
-from sqlalchemy import Column, Integer, ForeignKey
-from sqlmodel import Field, SQLModel, Relationship
+from sqlalchemy import Column, ForeignKey, Integer
+from sqlmodel import Field, Relationship, SQLModel
 
 from src.ferron.constants import (
-    DEFAULT_HTTP_PORT,
-    DEFAULT_IS_H1_PROTOCOL_ENABLED,
-    DEFAULT_HTTPS_PORT,
-    DEFAULT_IS_H2_PROTOCOL_ENABLED,
-    DEFAULT_IS_H3_PROTOCOL_ENABLED,
-    DEFAULT_TIMEOUT,
-    DEFAULT_CACHE_MAX_ENTRIES,
     DEFAULT_CACHE_ENABLED,
     DEFAULT_CACHE_MAX_AGE,
-    DEFAULT_PRESERVE_HOST_HEADER,
-    DEFAULT_USE_UNIX_SOCKET,
-    DEFAULT_USE_SPA,
+    DEFAULT_CACHE_MAX_ENTRIES,
     DEFAULT_COMPRESSED,
     DEFAULT_DIRECTORY_LISTING,
-    DEFAULT_PRECOMPRESSED,
+    DEFAULT_HTTP_PORT,
+    DEFAULT_HTTPS_PORT,
+    DEFAULT_IS_H1_PROTOCOL_ENABLED,
+    DEFAULT_IS_H2_PROTOCOL_ENABLED,
+    DEFAULT_IS_H3_PROTOCOL_ENABLED,
     DEFAULT_LB_HEALTH_CHECK,
-    DEFAULT_LB_HEALTH_CHECK_WINDOW,
     DEFAULT_LB_HEALTH_CHECK_MAX_FAILS,
+    DEFAULT_LB_HEALTH_CHECK_WINDOW,
+    DEFAULT_PRECOMPRESSED,
+    DEFAULT_PRESERVE_HOST_HEADER,
+    DEFAULT_TIMEOUT,
+    DEFAULT_USE_SPA,
+    DEFAULT_USE_UNIX_SOCKET,
 )
 
 
@@ -164,7 +164,7 @@ class LoadBalancerConfig(CommonReverseProxyConfig, SQLModel, table=True):
     @property
     def virtual_host_name(self) -> Optional[str]:
         return self.virtual_host.virtual_host_name if self.virtual_host else None
-    
+
     @property
     def backend_urls(self) -> List[str]:
         return [backend.backend_url for backend in self.backend_urls_relationship]

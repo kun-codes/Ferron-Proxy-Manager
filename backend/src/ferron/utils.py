@@ -1,20 +1,20 @@
+import asyncio
 import os
 
-import jinja2
 import aiofiles
-import asyncio
+import jinja2
 from aiofiles import os as aiofiles_os
 
 from src.ferron import schemas
+from src.ferron.constants import SUB_CONFIG_PATH, ConfigFileLocation, TemplateType
+from src.ferron.exceptions import FileNotFound, TemplateConfigAndTemplateTypeMismatch
 from src.ferron.schemas import (
     GlobalTemplateConfig,
     TemplateConfig,
-    UpdateReverseProxyConfig,
     UpdateLoadBalancerConfig,
+    UpdateReverseProxyConfig,
     UpdateStaticFileConfig,
 )
-from src.ferron.constants import TemplateType, ConfigFileLocation, SUB_CONFIG_PATH
-from src.ferron.exceptions import TemplateConfigAndTemplateTypeMismatch, FileNotFound
 
 _CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 _TEMPLATES_DIR = os.path.join(_CURRENT_DIR, "templates")
@@ -60,7 +60,7 @@ async def render_template(template_type: TemplateType, template_config: Template
 
         # render_async() will ignore the id field in UpdateReverseProxyConfig
         text = await template.render_async(**template_config.model_dump())
-        
+
         return text
     elif template_type == TemplateType.LOAD_BALANCER_CONFIG:
         if not isinstance(template_config, UpdateLoadBalancerConfig):
@@ -68,7 +68,7 @@ async def render_template(template_type: TemplateType, template_config: Template
 
         # render_async() will ignore the id field in UpdateLoadBalancerConfig
         text = await template.render_async(**template_config.model_dump())
-        
+
         return text
     elif template_type == TemplateType.STATIC_FILE_CONFIG:
         if not isinstance(template_config, UpdateStaticFileConfig):
@@ -76,7 +76,7 @@ async def render_template(template_type: TemplateType, template_config: Template
 
         # render_async() will ignore the id field in UpdateStaticFileConfig
         text = await template.render_async(**template_config.model_dump())
-        
+
         return text
 
 
@@ -85,15 +85,15 @@ async def write_config(path: str, text: str) -> None:
     atomically writes `text` to file at `path` with 644 permissions
     """
     target_dir = os.path.dirname(path)
-    
+
     await aiofiles_os.makedirs(target_dir, exist_ok=True)
 
 
     # atomic write by writing to a temp file and then atomically replacing the target file
     ## have to temp file in the same directory as target to avoid cross-device link errors
     async with aiofiles.tempfile.NamedTemporaryFile(
-        mode="w+", 
-        delete=False, 
+        mode="w+",
+        delete=False,
         dir=target_dir
     ) as temp_file:
         await temp_file.write(text)

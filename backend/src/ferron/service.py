@@ -1,23 +1,22 @@
 from typing import Annotated
 
 import sqlalchemy.exc
-
 from fastapi import Depends
-from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
+from sqlmodel.ext.asyncio.session import AsyncSession
 
-from src.ferron import models, schemas, exceptions
 from src.database import get_session
+from src.ferron import exceptions, models, schemas
 from src.ferron.exceptions import VirtualHostNameAlreadyExists
 from src.ferron.utils import (
-    write_global_config_to_file,
-    write_reverse_proxy_config_to_file,
-    delete_reverse_proxy_config_from_file,
-    write_load_balancer_config_to_file,
     delete_load_balancer_config_from_file,
-    write_static_file_config_to_file,
+    delete_reverse_proxy_config_from_file,
     delete_static_file_config_from_file,
+    write_global_config_to_file,
+    write_load_balancer_config_to_file,
+    write_reverse_proxy_config_to_file,
+    write_static_file_config_to_file,
 )
 
 
@@ -271,7 +270,7 @@ async def create_load_balancer_config(
 
     session.add(virtual_host)
     session.add(load_balancer_config)
-    
+
     try:
         await session.flush()
     except sqlalchemy.exc.IntegrityError:
@@ -287,9 +286,9 @@ async def create_load_balancer_config(
             backend_url=backend_url
         )
         session.add(backend_record)
-    
+
     await session.flush()
-    
+
     # backend_urls is a property of the LoadBalancerConfig model that relies on a relationship,
     # have to refresh to get the backend_urls_relationship loaded.
     await session.refresh(
@@ -351,9 +350,9 @@ async def update_load_balancer_config(
     # Update backend URLs - delete existing and create new ones
     for backend in existing_config.backend_urls_relationship:
         await session.delete(backend)
-    
+
     await session.flush()
-    
+
     for backend_url in load_balancer_config_data.backend_urls:
         backend_record = models.LoadBalancerBackendURL(
             virtual_host=existing_config.virtual_host,
