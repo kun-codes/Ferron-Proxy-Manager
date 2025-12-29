@@ -2,13 +2,12 @@ from fastapi import HTTPException, status
 
 
 class AuthException(HTTPException):
-
-    def __init__(self, detail: str | dict, status_code: int = status.HTTP_400_BAD_REQUEST):
+    def __init__(self, detail: str | dict, status_code: int = status.HTTP_400_BAD_REQUEST) -> None:
         super().__init__(status_code=status_code, detail=detail)
 
 
 class InvalidCredentialsException(AuthException):
-    def __init__(self, message: str = "Invalid credentials"):
+    def __init__(self, message: str = "Invalid credentials") -> None:
         super().__init__(
             detail={
                 "error_code": "invalid_credentials",
@@ -20,7 +19,7 @@ class InvalidCredentialsException(AuthException):
 
 
 class UserAlreadyExistsException(AuthException):
-    def __init__(self, message: str = "User already exists"):
+    def __init__(self, message: str = "User already exists") -> None:
         super().__init__(
             detail={
                 "error_code": "user_already_exists",
@@ -31,7 +30,7 @@ class UserAlreadyExistsException(AuthException):
 
 
 class InvalidTokenException(AuthException):
-    def __init__(self, message: str = "Could not validate token"):
+    def __init__(self, message: str = "Could not validate token") -> None:
         super().__init__(
             detail={
                 "error_code": "invalid_token",
@@ -43,7 +42,7 @@ class InvalidTokenException(AuthException):
 
 
 class UserNotFoundException(AuthException):
-    def __init__(self, message: str = "User not found"):
+    def __init__(self, message: str = "User not found") -> None:
         super().__init__(
             detail={
                 "error_code": "user_not_found",

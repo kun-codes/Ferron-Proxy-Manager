@@ -9,7 +9,7 @@ class FerronException(HTTPException):
 
 
 class GlobalConfigAlreadyExists(FerronException):
-    def __init__(self, message: str = "Global configuration already exists"):
+    def __init__(self, message: str = "Global configuration already exists") -> None:
         super().__init__(
             status_code=status.HTTP_409_CONFLICT,
             detail={
@@ -20,7 +20,7 @@ class GlobalConfigAlreadyExists(FerronException):
 
 
 class ConfigNotFound(FerronException):
-    def __init__(self, config_type: str = "Configuration"):
+    def __init__(self, config_type: str = "Configuration") -> None:
         super().__init__(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={
@@ -31,7 +31,7 @@ class ConfigNotFound(FerronException):
 
 
 class VirtualHostNameAlreadyExists(FerronException):
-    def __init__(self, virtual_host_name: str = "<virtual_host_name>"):
+    def __init__(self, virtual_host_name: str = "<virtual_host_name>") -> None:
         super().__init__(
             status_code=status.HTTP_409_CONFLICT,
             detail={
@@ -42,7 +42,7 @@ class VirtualHostNameAlreadyExists(FerronException):
 
 
 class TemplateConfigAndTemplateTypeMismatch(HTTPException):
-    def __init__(self, template_name: TemplateType, config: TemplateConfig):
+    def __init__(self, template_name: TemplateType, config: TemplateConfig) -> None:
         super().__init__(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={
