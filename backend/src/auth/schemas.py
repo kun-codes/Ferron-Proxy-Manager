@@ -7,8 +7,8 @@ class Token(BaseModel):
     token_type: str
 
 
-class RefreshTokenRequest(BaseModel):
-    refresh_token: str
+class AuthResponse(BaseModel):
+    message: str
 
 
 class UserBase(BaseModel):

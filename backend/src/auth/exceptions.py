@@ -12,7 +12,6 @@ class InvalidCredentialsException(AuthException):
             detail={"error_code": "invalid_credentials", "message": message},
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
-        self.headers = {"WWW-Authenticate": "Bearer"}
 
 
 class UserAlreadyExistsException(AuthException):
@@ -29,7 +28,6 @@ class InvalidTokenException(AuthException):
             detail={"error_code": "invalid_token", "message": message},
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
-        self.headers = {"WWW-Authenticate": "Bearer"}
 
 
 class UserNotFoundException(AuthException):

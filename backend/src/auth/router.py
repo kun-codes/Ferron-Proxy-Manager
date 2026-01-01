@@ -1,11 +1,12 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel.ext.asyncio.session import AsyncSession
 from starlette.requests import Request
 
 from src.auth import schemas, service
+from src.auth.constants import ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_MINUTES
 from src.auth.dependencies import get_current_user
 from src.auth.exceptions import (
     InvalidCredentialsException,
@@ -36,17 +37,37 @@ async def signup(
 
 @router.post(
     "/login",
-    response_model=schemas.Token,
+    response_model=schemas.AuthResponse,
     responses=generate_error_response(InvalidCredentialsException, "Invalid username or password"),
 )
 @rate_limiter.limit("5/15minute")
 async def login(
+    response: Response,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: Annotated[AsyncSession, Depends(get_session)],
     request: Request,
-) -> schemas.Token:
+) -> schemas.AuthResponse:
     user = await service.authenticate_user(db, form_data.username, form_data.password)
-    return await service.create_token_for_user(db, user)
+    token = await service.create_token_for_user(db, user)
+
+    response.set_cookie(
+        key="access_token",
+        value=token.access_token,
+        httponly=True,
+        secure=True,
+        samesite="strict",
+        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    )
+    response.set_cookie(
+        key="refresh_token",
+        value=token.refresh_token,
+        httponly=True,
+        secure=True,
+        samesite="strict",
+        max_age=REFRESH_TOKEN_EXPIRE_MINUTES * 60,
+    )
+
+    return schemas.AuthResponse(message="Login successful")
 
 
 @router.get("/me", response_model=schemas.User, responses=generate_error_response(InvalidTokenException))
@@ -58,19 +79,44 @@ async def get_current_user_info(
 
 @router.post(
     "/token/refresh",
-    response_model=schemas.Token,
+    response_model=schemas.AuthResponse,
     responses=merge_responses(
         generate_error_response(InvalidTokenException), generate_error_response(UserNotFoundException, "User not found")
     ),
 )
 @rate_limiter.limit("10/15minute")
 async def refresh_token(
-    refresh_data: schemas.RefreshTokenRequest, db: Annotated[AsyncSession, Depends(get_session)], request: Request
-) -> schemas.Token:
+    response: Response,
+    request: Request,
+    db: Annotated[AsyncSession, Depends(get_session)],
+) -> schemas.AuthResponse:
     """
     refresh access token using a valid refresh token and implements token rotation
     """
-    return await service.refresh_access_token(db, refresh_data.refresh_token)
+    refresh_token_value = request.cookies.get("refresh_token")
+    if not refresh_token_value:
+        raise InvalidTokenException("Refresh token not found in cookies")
+
+    token = await service.refresh_access_token(db, refresh_token_value)
+
+    response.set_cookie(
+        key="access_token",
+        value=token.access_token,
+        httponly=True,
+        secure=True,
+        samesite="strict",
+        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    )
+    response.set_cookie(
+        key="refresh_token",
+        value=token.refresh_token,
+        httponly=True,
+        secure=True,
+        samesite="strict",
+        max_age=REFRESH_TOKEN_EXPIRE_MINUTES * 60,
+    )
+
+    return schemas.AuthResponse(message="Token refreshed successfully")
 
 
 @router.post(
@@ -79,24 +125,31 @@ async def refresh_token(
     responses=generate_error_response(InvalidTokenException, "Refresh token not found or does not belong to this user"),
 )
 async def logout(
+    response: Response,
+    request: Request,
     current_user: Annotated[schemas.User, Depends(get_current_user)],
-    refresh_data: schemas.RefreshTokenRequest,
     db: Annotated[AsyncSession, Depends(get_session)],
 ) -> None:
     """
     Logs out from current session by revoking the refresh token
 
     Takes:
-    - Access token from Authorization header
-    - Refresh token from request body
+    - Access token from cookies
+    - Refresh token from cookies
     """
-    await service.revoke_user_refresh_token(db, current_user.id, refresh_data.refresh_token)
+    refresh_token_value = request.cookies.get("refresh_token")
+    if refresh_token_value:
+        await service.revoke_user_refresh_token(db, current_user.id, refresh_token_value)
+
+    response.delete_cookie(key="access_token", secure=True, samesite="strict", httponly=True)
+    response.delete_cookie(key="refresh_token", secure=True, samesite="strict", httponly=True)
 
 
 @router.post(
     "/logout/all", status_code=status.HTTP_204_NO_CONTENT, responses=generate_error_response(InvalidTokenException)
 )
 async def logout_all_devices(
+    response: Response,
     current_user: Annotated[schemas.User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_session)],
 ) -> None:
@@ -104,6 +157,10 @@ async def logout_all_devices(
     logs out from all devices by revoking all refresh tokens for the user
 
     takes:
-    - Access token only from Authorization header
+    - Access token from cookies
     """
     await service.revoke_all_user_tokens(db, current_user.id)
+
+    # Clear cookies
+    response.delete_cookie(key="access_token", secure=True, samesite="strict", httponly=True)
+    response.delete_cookie(key="refresh_token", secure=True, samesite="strict", httponly=True)

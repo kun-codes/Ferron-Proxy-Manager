@@ -1,18 +1,17 @@
-from typing import Annotated
-
-from fastapi import Depends
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import Cookie, Depends
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from src.auth import schemas, service
+from src.auth.exceptions import InvalidTokenException
 from src.database import get_session
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
 async def get_current_user(
-    token: Annotated[str, Depends(oauth2_scheme)],
-    db: Annotated[AsyncSession, Depends(get_session)],
+    access_token: str | None = Cookie(None),
+    db: AsyncSession = Depends(get_session),
 ) -> schemas.User:
-    user = await service.get_user_from_token(db, token)
+    if not access_token:
+        raise InvalidTokenException("Access token not found in cookies")
+
+    user = await service.get_user_from_token(db, access_token)
     return schemas.User.model_validate(user)
