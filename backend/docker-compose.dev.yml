@@ -23,6 +23,7 @@ services:
       - ./data:/app/data
       - "./ferron.kdl:/etc/ferron.kdl"
       - "ferron-sub-configs:/etc/ferron-proxy-manager/"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
     env_file:
       - .env
     restart: unless-stopped

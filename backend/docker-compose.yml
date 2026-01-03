@@ -22,6 +22,7 @@ services:
             - ferron-data:/app/data
             - "./ferron.kdl:/etc/ferron.kdl"
             - "ferron-sub-configs:/etc/ferron-proxy-manager/"
+            - "/var/run/docker.sock:/var/run/docker.sock:ro"
         environment:
             - DEBUG=${DEBUG:-false}
             - DATABASE_URL=${DATABASE_URL:-sqlite+aiosqlite:///./data/ferron.db}
