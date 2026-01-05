@@ -1,13 +1,15 @@
 import asyncio
 import os
 
+import aiodocker
 import aiofiles
 import jinja2
 from aiofiles import os as aiofiles_os
 
+from src.config import settings
 from src.ferron import schemas
 from src.ferron.constants import SUB_CONFIG_PATH, ConfigFileLocation, TemplateType
-from src.ferron.exceptions import FileNotFound, TemplateConfigAndTemplateTypeMismatch
+from src.ferron.exceptions import FerronContainerNotFoundException, FileNotFound, TemplateConfigAndTemplateTypeMismatch
 from src.ferron.schemas import (
     GlobalTemplateConfig,
     TemplateConfig,
@@ -233,3 +235,15 @@ async def delete_static_file_config_from_file(static_file_id: int) -> None:
     await write_config(ConfigFileLocation.MAIN_CONFIG.value, new_main_config_text)
 
     await aiofiles_os.remove(f"{SUB_CONFIG_PATH}/{static_file_id}_static_file.kdl")
+
+
+async def reload_ferron_service() -> None:
+    docker = aiodocker.Docker()
+    try:
+        container = await docker.containers.get(settings.ferron_container_name)
+        await container.kill(signal="SIGHUP")
+    except aiodocker.exceptions.DockerError as e:
+        if e.status == 404:
+            raise FerronContainerNotFoundException(settings.ferron_container_name)
+    finally:
+        await docker.close()

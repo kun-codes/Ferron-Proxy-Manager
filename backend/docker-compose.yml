@@ -30,6 +30,7 @@ services:
             - DATABASE_ECHO=${DATABASE_ECHO:-false}
             - AUTH_SECRET_KEY=${AUTH_SECRET_KEY:?AUTH_SECRET_KEY is required in production}
             - AUTH_REFRESH_SECRET_KEY=${AUTH_REFRESH_SECRET_KEY:?AUTH_REFRESH_SECRET_KEY is required in production}
+            - FERRON_CONTAINER_NAME=ferron  # change this if you changed the container name of ferron service
         restart: always
 
 volumes:

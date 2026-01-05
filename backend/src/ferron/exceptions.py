@@ -46,6 +46,17 @@ class TemplateConfigAndTemplateTypeMismatch(HTTPException):
         )
 
 
+class FerronContainerNotFoundException(FerronException):
+    def __init__(self, missing_container_name: str) -> None:
+        super().__init__(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error_code": "ferron_container_not_found",
+                "message": f"Ferron container '{missing_container_name}' not found",
+            },
+        )
+
+
 class FileSystemException(HTTPException):
     pass
 

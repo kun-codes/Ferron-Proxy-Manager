@@ -13,6 +13,7 @@ from src.ferron.utils import (
     delete_load_balancer_config_from_file,
     delete_reverse_proxy_config_from_file,
     delete_static_file_config_from_file,
+    reload_ferron_service,
     write_global_config_to_file,
     write_load_balancer_config_to_file,
     write_reverse_proxy_config_to_file,
@@ -51,6 +52,8 @@ async def create_global_config(
 
         global_config_schema = schemas.GlobalTemplateConfig.model_validate(global_config)
 
+        await reload_ferron_service()
+
         return global_config_schema
     else:
         raise exceptions.GlobalConfigAlreadyExists()
@@ -74,6 +77,8 @@ async def update_global_config(
     await write_global_config_to_file(existing_config_schema)
 
     await session.commit()
+
+    await reload_ferron_service()
 
     return existing_config_schema
 
@@ -124,6 +129,8 @@ async def create_reverse_proxy_config(
 
     await session.commit()
 
+    await reload_ferron_service()
+
     return reverse_proxy_config_schema
 
 
@@ -170,6 +177,8 @@ async def update_reverse_proxy_config(
     await write_reverse_proxy_config_to_file(existing_config_schema)
 
     await session.commit()
+
+    await reload_ferron_service()
 
     return existing_config_schema
 
@@ -231,6 +240,8 @@ async def delete_reverse_proxy_config(
     await session.commit()
     await delete_reverse_proxy_config_from_file(reverse_proxy_id)
 
+    await reload_ferron_service()
+
     return _reverse_proxy_to_schema(config)
 
 
@@ -279,6 +290,8 @@ async def create_load_balancer_config(
     await write_load_balancer_config_to_file(load_balancer_config_schema)
 
     await session.commit()
+
+    await reload_ferron_service()
 
     return load_balancer_config_schema
 
@@ -342,6 +355,8 @@ async def update_load_balancer_config(
     await write_load_balancer_config_to_file(existing_config_schema)
 
     await session.commit()
+
+    await reload_ferron_service()
 
     return existing_config_schema
 
@@ -409,6 +424,8 @@ async def delete_load_balancer_config(
     await session.commit()
     await delete_load_balancer_config_from_file(load_balancer_id)
 
+    await reload_ferron_service()
+
     return _load_balancer_to_schema(config)
 
 
@@ -443,6 +460,8 @@ async def create_static_file_config(
     await write_static_file_config_to_file(static_file_config_schema)
 
     await session.commit()
+
+    await reload_ferron_service()
 
     return static_file_config_schema
 
@@ -489,6 +508,8 @@ async def update_static_file_config(
     await write_static_file_config_to_file(existing_config_schema)
 
     await session.commit()
+
+    await reload_ferron_service()
 
     return existing_config_schema
 
@@ -549,5 +570,7 @@ async def delete_static_file_config(
     # delete config file only after successfully deleted from db
     await session.commit()
     await delete_static_file_config_from_file(static_file_id)
+
+    await reload_ferron_service()
 
     return _static_file_to_schema(config)

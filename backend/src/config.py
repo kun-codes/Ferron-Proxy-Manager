@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     database_url: str
     database_echo: bool
 
+    ferron_container_name: str
+
     model_config = SettingsConfigDict(
         extra="ignore",
         case_sensitive=False,
