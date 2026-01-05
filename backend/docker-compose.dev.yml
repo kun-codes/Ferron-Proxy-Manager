@@ -28,6 +28,8 @@ services:
     env_file:
       - .env
     restart: unless-stopped
+    depends_on:
+      - ferron
 
 volumes:
   ferron-acme:

@@ -32,6 +32,8 @@ services:
             - AUTH_REFRESH_SECRET_KEY=${AUTH_REFRESH_SECRET_KEY:?AUTH_REFRESH_SECRET_KEY is required in production}
             - FERRON_CONTAINER_NAME=ferron  # change this if you changed the container name of ferron service
         restart: always
+        depends_on:
+            - ferron
 
 volumes:
     ferron-acme:
