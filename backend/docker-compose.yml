@@ -2,6 +2,7 @@ services:
     # Ferron container
     ferron:
         image: ferronserver/ferron:2
+        container_name: ferron
         ports:
             - "80:80"
             - "443:443"
@@ -15,7 +16,7 @@ services:
         build:
             context: .
             dockerfile: Dockerfile
-        container_name: ferron-proxy-backend
+        container_name: ferron-proxy-manager
         ports:
             - "8000:8000"
         volumes:
