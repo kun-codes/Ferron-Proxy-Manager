@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from typing import Annotated, Any
 
 import aiofiles
-from fastapi import Depends, FastAPI, status
+from fastapi import APIRouter, Depends, FastAPI, status
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from starlette.requests import Request
@@ -72,8 +72,10 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded) -> JSONRe
     )
 
 
-app.include_router(auth_router)
-app.include_router(config_router)
+api_router = APIRouter(prefix="/api")
+api_router.include_router(auth_router)
+api_router.include_router(config_router)
+app.include_router(api_router)
 
 
 @app.get("/")
