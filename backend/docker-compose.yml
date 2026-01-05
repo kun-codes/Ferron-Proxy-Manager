@@ -16,7 +16,7 @@ services:
         build:
             context: .
             dockerfile: Dockerfile
-        container_name: ferron-proxy-manager
+        container_name: ferron-proxy-manager-backend
         ports:
             - "8000:8000"
         volumes:
