@@ -38,7 +38,8 @@ async def create_user(db: AsyncSession, user_create: schemas.UserCreate) -> sche
     if await get_user_by_email(db, user_create.email):
         raise UserAlreadyExistsException("User with same credentials already exists")
 
-    hashed_password = get_password_hash(user_create.password)
+    hashed_password = get_password_hash(user_create.password.get_secret_value())
+
     db_user = models.User(
         username=user_create.username,
         email=user_create.email,

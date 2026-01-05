@@ -1,4 +1,6 @@
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr
+
+from src.auth.constants import PASSWORD_MIN_LENGTH, USERNAME_MAX_LENGTH, USERNAME_MIN_LENGTH
 
 
 class Token(BaseModel):
@@ -12,12 +14,12 @@ class AuthResponse(BaseModel):
 
 
 class UserBase(BaseModel):
-    username: str
+    username: str = Field(min_length=USERNAME_MIN_LENGTH, max_length=USERNAME_MAX_LENGTH)
     email: EmailStr
 
 
 class UserCreate(UserBase):
-    password: str
+    password: SecretStr = Field(min_length=PASSWORD_MIN_LENGTH)
 
 
 class User(UserBase):
