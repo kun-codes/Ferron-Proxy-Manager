@@ -8,28 +8,42 @@ services:
       - "443:443"
     volumes:
       - "ferron-acme:/var/cache/ferron-acme" # for persistent automatic TLS cache
-      - "./ferron.kdl:/etc/ferron.kdl"
+      - "./backend/ferron.kdl:/etc/ferron.kdl"
       - "ferron-sub-configs:/etc/ferron-proxy-manager/"
     restart: always
 
   backend:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile.dev
     container_name: ferron-proxy-manager-backend
     ports:
       - "8000:8000"
     volumes:
-      - .:/app
-      - ./data:/app/data
-      - "./ferron.kdl:/etc/ferron.kdl"
+      - ./backend:/app
+      - ./backend/data:/app/data
+      - "./backend/ferron.kdl:/etc/ferron.kdl"
       - "ferron-sub-configs:/etc/ferron-proxy-manager/"
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
     env_file:
-      - .env
+      - ./backend/.env
     restart: unless-stopped
     depends_on:
       - ferron
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: ferron-proxy-manager-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    restart: unless-stopped
+    depends_on:
+      - backend
 
 volumes:
   ferron-acme:
