@@ -1,0 +1,19 @@
+# from https://gist.github.com/aradalvand/04b2cad14b00e5ffe8ec96a3afbb34fb
+
+Dockerfile
+.dockerignore
+.git
+.gitignore
+.gitattributes
+README.md
+.npmrc
+.prettierrc
+.eslintrc.cjs
+.graphqlrc
+.editorconfig
+.svelte-kit
+.vscode
+node_modules
+build
+package
+**/.env
