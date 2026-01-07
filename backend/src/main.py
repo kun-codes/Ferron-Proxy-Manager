@@ -6,6 +6,7 @@ from typing import Annotated, Any
 
 import aiofiles
 from fastapi import APIRouter, Depends, FastAPI, status
+from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from starlette.requests import Request
@@ -49,6 +50,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     yield
 
 
+origins = ["http://localhost:5173", "http://localhost:3000"]
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
@@ -57,6 +59,16 @@ app = FastAPI(
 )
 app.state.limiter = rate_limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 # override the default exception handler to return a custom response
