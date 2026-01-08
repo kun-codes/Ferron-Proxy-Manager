@@ -10,7 +10,7 @@ class Token(BaseModel):
 
 
 class AuthResponse(BaseModel):
-    message: str
+    msg: str
 
 
 class UserBase(BaseModel):

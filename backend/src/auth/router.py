@@ -74,7 +74,7 @@ async def login(
         max_age=REFRESH_TOKEN_EXPIRE_MINUTES * 60,
     )
 
-    return schemas.AuthResponse(message="Login successful")
+    return schemas.AuthResponse(msg="Login successful")
 
 
 @router.get("/me", response_model=schemas.User, responses=generate_error_response(InvalidTokenException))
@@ -125,7 +125,7 @@ async def refresh_token(
         max_age=REFRESH_TOKEN_EXPIRE_MINUTES * 60,
     )
 
-    return schemas.AuthResponse(message="Token refreshed successfully")
+    return schemas.AuthResponse(msg="Token refreshed successfully")
 
 
 @router.post(

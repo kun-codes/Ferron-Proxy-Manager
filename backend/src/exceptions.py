@@ -15,6 +15,6 @@ class RateLimitExceededCustomException(HTTPException):
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail={
                 "error_code": "rate_limit_exceeded",
-                "message": "Please slow down and try again later.",
+                "msg": "Please slow down and try again later.",
             },
         )
