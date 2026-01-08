@@ -78,8 +78,10 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded) -> JSONRe
     return JSONResponse(
         status_code=status.HTTP_429_TOO_MANY_REQUESTS,
         content={
-            "error_code": "rate_limit_exceeded",
-            "message": "Please slow down and try again later.",
+            "detail": {
+                "error_code": "rate_limit_exceeded",
+                "message": "Please slow down and try again later.",
+            }
         },
     )
 
