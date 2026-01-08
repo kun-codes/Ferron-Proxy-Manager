@@ -15,6 +15,7 @@ from src.auth.exceptions import (
     UserNotFoundException,
 )
 from src.database import get_session
+from src.exceptions import RateLimitExceededCustomException
 from src.service import rate_limiter
 from src.utils import generate_error_response, merge_responses
 
@@ -25,7 +26,10 @@ router = APIRouter(prefix="/auth", tags=["auth"])
     "/signup",
     response_model=schemas.User,
     status_code=status.HTTP_201_CREATED,
-    responses=generate_error_response(UserAlreadyExistsException, "User with same credentials already exists"),
+    responses=merge_responses(
+        generate_error_response(UserAlreadyExistsException, "User with same credentials already exists"),
+        generate_error_response(RateLimitExceededCustomException),
+    ),
 )
 @rate_limiter.limit("3/15minute")
 async def signup(
@@ -38,7 +42,10 @@ async def signup(
 @router.post(
     "/login",
     response_model=schemas.AuthResponse,
-    responses=generate_error_response(InvalidCredentialsException, "Invalid username or password"),
+    responses=merge_responses(
+        generate_error_response(InvalidCredentialsException, "Invalid username or password"),
+        generate_error_response(RateLimitExceededCustomException),
+    ),
 )
 @rate_limiter.limit("5/15minute")
 async def login(
@@ -81,7 +88,9 @@ async def get_current_user_info(
     "/token/refresh",
     response_model=schemas.AuthResponse,
     responses=merge_responses(
-        generate_error_response(InvalidTokenException), generate_error_response(UserNotFoundException, "User not found")
+        generate_error_response(InvalidTokenException),
+        generate_error_response(UserNotFoundException, "User not found"),
+        generate_error_response(RateLimitExceededCustomException),
     ),
 )
 @rate_limiter.limit("10/15minute")
