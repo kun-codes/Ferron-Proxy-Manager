@@ -17,21 +17,16 @@
 		<form>
 			<Field.Group>
 				<Field.Field>
-					<Field.Label for="name">Full Name</Field.Label>
-					<Input id="name" type="text" placeholder="John Doe" required />
+					<Field.Label for="username">Username</Field.Label>
+					<Input id="username" type="text" placeholder="john_doe" required />
 				</Field.Field>
 				<Field.Field>
 					<Field.Label for="email">Email</Field.Label>
-					<Input id="email" type="email" placeholder="m@example.com" required />
-					<Field.Description>
-						We'll use this to contact you. We will not share your email with anyone
-						else.
-					</Field.Description>
+					<Input id="email" type="email" placeholder="me@example.com" required />
 				</Field.Field>
 				<Field.Field>
 					<Field.Label for="password">Password</Field.Label>
 					<Input id="password" type="password" required />
-					<Field.Description>Must be at least 8 characters long.</Field.Description>
 				</Field.Field>
 				<Field.Field>
 					<Field.Label for="confirm-password">Confirm Password</Field.Label>
@@ -41,7 +36,6 @@
 				<Field.Group>
 					<Field.Field>
 						<Button type="submit">Create Account</Button>
-						<Button variant="outline" type="button">Sign up with Google</Button>
 						<Field.Description class="px-6 text-center">
 							Already have an account? <a href="#/">Sign in</a>
 						</Field.Description>
