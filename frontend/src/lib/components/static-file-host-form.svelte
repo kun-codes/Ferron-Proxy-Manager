@@ -6,7 +6,10 @@
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
 	import type { components } from '$lib/api/types';
+	import { ApiPaths } from '$lib/api/types';
 	import type { ComponentProps } from 'svelte';
+	import client from '$lib/apiClient';
+	import { toast } from 'svelte-sonner';
 
 	type CreateStaticFileConfig = components['schemas']['CreateStaticFileConfig'];
 
@@ -24,10 +27,62 @@
 	};
 
 	let formData = $state<CreateStaticFileConfig>({ ...initialFormData });
+	let isSubmitting = $state(false);
+	let formError = $state('');
+	let fieldErrors = $state<Record<string, string>>({});
 
 	const cancel = () => {
 		formData = { ...initialFormData };
+		formError = '';
+		fieldErrors = {};
 	};
+
+	async function handleSubmit(event: Event) {
+		event.preventDefault();
+
+		// Clear all errors on submission
+		formError = '';
+		fieldErrors = {};
+
+		isSubmitting = true;
+
+		try {
+			const { data, error, response } = await client.POST(
+				ApiPaths.create_static_file_config_api_configs_static_file_post,
+				{
+					body: formData
+				}
+			);
+
+			if (response.status === 200 && data) {
+				toast.success('Static file server configuration created successfully!');
+				formData = { ...initialFormData };
+			} else if (response.status === 422 && error) {
+				const validationError = error as { detail?: Array<{ loc: (string | number)[]; msg: string }> };
+				if (validationError.detail) {
+					validationError.detail.forEach((err) => {
+						const fieldName = err.loc[err.loc.length - 1];
+						if (typeof fieldName === 'string') {
+							fieldErrors[fieldName] = err.msg;
+						}
+					});
+				}
+			} else if (error) {
+				const apiError = error as { detail?: { error_code?: string; msg?: string } };
+				if (apiError.detail?.msg) {
+					formError = apiError.detail.msg;
+				} else {
+					formError = 'An error occurred. Please try again.';
+				}
+			} else {
+				formError = 'An unexpected error occurred. Please try again.';
+			}
+		} catch (err) {
+			formError = 'Network error. Please check your connection and try again.';
+		} finally {
+			isSubmitting = false;
+		}
+	}
 </script>
 
 <Card.Root {...restProps}>
@@ -38,7 +93,13 @@
 		</Card.Description>
 	</Card.Header>
 	<Card.Content>
-		<form class="space-y-6">
+		{#if formError}
+			<div class="mb-4 rounded-lg border border-red-500 bg-red-50 p-4 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-400">
+				{formError}
+			</div>
+		{/if}
+
+		<form onsubmit={handleSubmit} class="space-y-6">
 			<Field.Group>
 				<Field.Field>
 					<Field.Label for="virtual-host-name">Virtual Host Name</Field.Label>
@@ -48,8 +109,13 @@
 						placeholder="example.com"
 						bind:value={formData.virtual_host_name}
 						required
+						disabled={isSubmitting}
 					/>
-					<Field.Description>The hostname for this static file server.</Field.Description>
+					{#if fieldErrors.virtual_host_name}
+						<Field.Error>{fieldErrors.virtual_host_name}</Field.Error>
+					{:else}
+						<Field.Description>The hostname for this static file server.</Field.Description>
+					{/if}
 				</Field.Field>
 
 				<Field.Field>
@@ -60,14 +126,19 @@
 						placeholder="/var/www/html"
 						bind:value={formData.static_files_dir}
 						required
+						disabled={isSubmitting}
 					/>
-					<Field.Description>
-						The directory path where static files are located.
-					</Field.Description>
+					{#if fieldErrors.static_files_dir}
+						<Field.Error>{fieldErrors.static_files_dir}</Field.Error>
+					{:else}
+						<Field.Description>
+							The directory path where static files are located.
+						</Field.Description>
+					{/if}
 				</Field.Field>
 
 				<Field.Field orientation="horizontal">
-					<Checkbox id="cache" bind:checked={formData.cache} />
+					<Checkbox id="cache" bind:checked={formData.cache} disabled={isSubmitting} />
 					<Field.Content>
 						<Label for="cache" class="font-normal">Enable Caching</Label>
 						<Field.Description>
@@ -83,15 +154,19 @@
 						type="number"
 						placeholder="3600"
 						bind:value={formData.cache_max_age}
-						disabled={!formData.cache}
+						disabled={!formData.cache || isSubmitting}
 					/>
-					<Field.Description>
-						How long cached files should be stored (in seconds).
-					</Field.Description>
+					{#if fieldErrors.cache_max_age}
+						<Field.Error>{fieldErrors.cache_max_age}</Field.Error>
+					{:else}
+						<Field.Description>
+							How long cached files should be stored (in seconds).
+						</Field.Description>
+					{/if}
 				</Field.Field>
 
 				<Field.Field orientation="horizontal">
-					<Checkbox id="use-spa" bind:checked={formData.use_spa} />
+					<Checkbox id="use-spa" bind:checked={formData.use_spa} disabled={isSubmitting} />
 					<Field.Content>
 						<Label for="use-spa" class="font-normal">Single Page Application Mode</Label>
 						<Field.Description>
@@ -101,7 +176,7 @@
 				</Field.Field>
 
 				<Field.Field orientation="horizontal">
-					<Checkbox id="compressed" bind:checked={formData.compressed} />
+					<Checkbox id="compressed" bind:checked={formData.compressed} disabled={isSubmitting} />
 					<Field.Content>
 						<Label for="compressed" class="font-normal">Enable Compression</Label>
 						<Field.Description>
@@ -111,7 +186,7 @@
 				</Field.Field>
 
 				<Field.Field orientation="horizontal">
-					<Checkbox id="directory-listing" bind:checked={formData.directory_listing} />
+					<Checkbox id="directory-listing" bind:checked={formData.directory_listing} disabled={isSubmitting} />
 					<Field.Content>
 						<Label for="directory-listing" class="font-normal">Directory Listing</Label>
 						<Field.Description>
@@ -121,7 +196,7 @@
 				</Field.Field>
 
 				<Field.Field orientation="horizontal">
-					<Checkbox id="precompressed" bind:checked={formData.precompressed} />
+					<Checkbox id="precompressed" bind:checked={formData.precompressed} disabled={isSubmitting} />
 					<Field.Content>
 						<Label for="precompressed" class="font-normal">Precompressed Files</Label>
 						<Field.Description>
@@ -131,11 +206,19 @@
 				</Field.Field>
 			</Field.Group>
 
+			{#if formError}
+				<div class="rounded-lg border border-red-500 bg-red-50 p-4 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-400">
+					{formError}
+				</div>
+			{/if}
+
 			<Field.Group>
 				<Field.Field>
-					<Button type="submit">Create Static File Server</Button>
+					<Button type="submit" disabled={isSubmitting}>
+						{isSubmitting ? 'Creating...' : 'Create Static File Server'}
+					</Button>
 					<Field.Description class="px-6 text-center">
-						<Button type="button" variant="outline" onclick={cancel}>Cancel</Button>
+						<Button type="button" variant="outline" onclick={cancel} disabled={isSubmitting}>Cancel</Button>
 					</Field.Description>
 				</Field.Field>
 			</Field.Group>
