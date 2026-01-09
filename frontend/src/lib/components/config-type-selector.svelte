@@ -20,21 +20,18 @@
 			title: 'Reverse Proxy',
 			description: 'Proxy requests to backend services with customizable settings',
 			icon: ArrowRightLeft,
-			complexity: 'Intermediate'
 		},
 		{
 			type: 'load-balancer' as ConfigType,
 			title: 'Load Balancer',
 			description: 'Balance traffic across multiple backend servers',
 			icon: Gauge,
-			complexity: 'Advanced'
 		},
 		{
 			type: 'static-file' as ConfigType,
 			title: 'Static Site',
 			description: 'Optimized configuration for static websites with caching',
 			icon: FileText,
-			complexity: 'Simple'
 		}
 	];
 </script>
@@ -69,9 +66,6 @@
 								</div>
 							</div>
 							<Card.Description class="text-xs">{config.description}</Card.Description>
-							<div class="pt-1">
-								<span class="text-xs text-muted-foreground">{config.complexity}</span>
-							</div>
 						</Card.Header>
 					</Card.Root>
 				</button>
