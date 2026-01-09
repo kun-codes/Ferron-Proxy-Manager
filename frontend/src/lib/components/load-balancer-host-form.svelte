@@ -5,7 +5,6 @@
 	import * as Field from '$lib/components/ui/field/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
-	// import { Plus, Trash2 } from 'lucide-svelte';
     import Plus  from '@lucide/svelte/icons/plus';
     import Trash2 from '@lucide/svelte/icons/trash-2';
 	import type { components } from '$lib/api/types';
