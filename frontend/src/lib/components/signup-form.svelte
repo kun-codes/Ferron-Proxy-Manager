@@ -158,7 +158,7 @@
 							{isSubmitting ? 'Creating Account...' : 'Create Account'}
 						</Button>
 						<Field.Description class="px-6 text-center">
-							Already have an account? <a href="/login">Sign in</a>
+							Already have an account? <a href="/login">Log in</a>
 						</Field.Description>
 					</Field.Field>
 				</Field.Group>
