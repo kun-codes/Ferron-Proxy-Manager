@@ -12,7 +12,7 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"format": "prettier --write .",
 		"lint": "prettier --check . && eslint .",
-		"generate:types": "openapi-typescript http://localhost:8000/openapi.json -o src/lib/api/types.ts --enum=true --enum-values=true ----make-paths-enum=true"
+		"generate:types": "openapi-typescript http://localhost:8000/openapi.json -o src/lib/api/types.ts --enum=true --enum-values=true --make-paths-enum=true --dedupe-enums=true"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^1.4.0",
