@@ -1,130 +1,31 @@
 <script lang="ts" module>
 	// sample data
 	const data = {
-		versions: ["1.0.1", "1.1.0-alpha", "2.0.0-beta1"],
 		navMain: [
 			{
-				title: "Getting Started",
+				title: "Home",
 				url: "#",
 				items: [
 					{
-						title: "Installation",
-						url: "#",
-					},
-					{
-						title: "Project Structure",
-						url: "#",
-					},
-				],
-			},
-			{
-				title: "Building Your Application",
-				url: "#",
-				items: [
-					{
-						title: "Routing",
-						url: "#",
-					},
-					{
-						title: "Data Fetching",
-						url: "#",
+						title: "Server (WIP)",
+						url: "/dashboard",
 						isActive: true,
-					},
-					{
-						title: "Rendering",
-						url: "#",
-					},
-					{
-						title: "Caching",
-						url: "#",
-					},
-					{
-						title: "Styling",
-						url: "#",
-					},
-					{
-						title: "Optimizing",
-						url: "#",
-					},
-					{
-						title: "Configuring",
-						url: "#",
-					},
-					{
-						title: "Testing",
-						url: "#",
-					},
-					{
-						title: "Authentication",
-						url: "#",
-					},
-					{
-						title: "Deploying",
-						url: "#",
-					},
-					{
-						title: "Upgrading",
-						url: "#",
-					},
-					{
-						title: "Examples",
-						url: "#",
-					},
+					}
 				],
 			},
 			{
-				title: "API Reference",
+				title: "Hosts",
 				url: "#",
 				items: [
 					{
-						title: "Components",
-						url: "#",
+						title: "Create Host",
+						url: "/dashboard/hosts/create",
+						isActive: false,
 					},
 					{
-						title: "File Conventions",
-						url: "#",
-					},
-					{
-						title: "Functions",
-						url: "#",
-					},
-					{
-						title: "next.config.js Options",
-						url: "#",
-					},
-					{
-						title: "CLI",
-						url: "#",
-					},
-					{
-						title: "Edge Runtime",
-						url: "#",
-					},
-				],
-			},
-			{
-				title: "Architecture",
-				url: "#",
-				items: [
-					{
-						title: "Accessibility",
-						url: "#",
-					},
-					{
-						title: "Fast Refresh",
-						url: "#",
-					},
-					{
-						title: "Svelte Compiler",
-						url: "#",
-					},
-					{
-						title: "Supported Browsers",
-						url: "#",
-					},
-					{
-						title: "Rollup",
-						url: "#",
+						title: "Manage Hosts",
+						url: "/dashboard/hosts/manage",
+						isActive: false,
 					},
 				],
 			},
@@ -133,8 +34,6 @@
 </script>
 
 <script lang="ts">
-	import SearchForm from "./search-form.svelte";
-	import VersionSwitcher from "./version-switcher.svelte";
 	import * as Sidebar from "$lib/components/ui/sidebar/index.js";
 	import type { ComponentProps } from "svelte";
 
@@ -143,9 +42,8 @@
 
 <Sidebar.Root {...restProps} bind:ref>
 	<Sidebar.Header>
-		<VersionSwitcher versions={data.versions} defaultVersion={data.versions[0]} />
-		<SearchForm />
-	</Sidebar.Header>
+			<div class="pl-2 pt-3 font-semibold text-lg">Ferron Proxy Manager</div>
+		</Sidebar.Header>
 	<Sidebar.Content>
 		<!-- We create a Sidebar.Group for each parent. -->
 		{#each data.navMain as group (group.title)}
