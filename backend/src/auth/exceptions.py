@@ -22,14 +22,6 @@ class UserAlreadyExistsException(AuthException):
         )
 
 
-class InvalidTokenException(AuthException):
-    def __init__(self, message: str = "Could not validate token") -> None:
-        super().__init__(
-            detail={"error_code": "invalid_token", "msg": message},
-            status_code=status.HTTP_401_UNAUTHORIZED,
-        )
-
-
 class UserNotFoundException(AuthException):
     def __init__(self, message: str = "User not found") -> None:
         super().__init__(

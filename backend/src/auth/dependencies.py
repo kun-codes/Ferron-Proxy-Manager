@@ -2,8 +2,8 @@ from fastapi import Cookie, Depends
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from src.auth import schemas, service
-from src.auth.exceptions import InvalidTokenException
 from src.database import get_session
+from src.exceptions import InvalidTokenException
 
 
 async def get_current_user(
