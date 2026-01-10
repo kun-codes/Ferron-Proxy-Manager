@@ -1,5 +1,4 @@
 <script lang="ts" module>
-	// sample data
 	const data = {
 		navMain: [
 			{
@@ -9,7 +8,6 @@
 					{
 						title: "Server (WIP)",
 						url: "/dashboard",
-						isActive: true,
 					}
 				],
 			},
@@ -20,12 +18,10 @@
 					{
 						title: "Create Host",
 						url: "/dashboard/hosts/create",
-						isActive: false,
 					},
 					{
 						title: "Manage Hosts",
 						url: "/dashboard/hosts/manage",
-						isActive: false,
 					},
 				],
 			},
@@ -36,6 +32,7 @@
 <script lang="ts">
 	import * as Sidebar from "$lib/components/ui/sidebar/index.js";
 	import type { ComponentProps } from "svelte";
+	import { page } from "$app/state";
 
 	let { ref = $bindable(null), ...restProps }: ComponentProps<typeof Sidebar.Root> = $props();
 </script>
@@ -53,7 +50,7 @@
 					<Sidebar.Menu>
 						{#each group.items as item (item.title)}
 							<Sidebar.MenuItem>
-								<Sidebar.MenuButton isActive={item.isActive}>
+								<Sidebar.MenuButton isActive={page.url.pathname === item.url}>
 									{#snippet child({ props })}
 										<a href={item.url} {...props}>{item.title}</a>
 									{/snippet}
