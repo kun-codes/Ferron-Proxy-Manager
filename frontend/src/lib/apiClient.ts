@@ -30,6 +30,8 @@ function isInvalidTokenError(errorBody: unknown): boolean {
 // Flag to prevent multiple simultaneous refresh attempts
 let isRefreshing = false;
 let refreshPromise: Promise<boolean> | null = null;
+// store request clones for retrying (associating original request with a fresh clone)
+const requestClones = new WeakMap<Request, Request>();
 
 const client = createClient<paths>({
 	baseUrl: 'http://localhost:8000',
@@ -73,18 +75,28 @@ function redirectToLogin(): void {
 }
 
 async function retryRequest(request: Request): Promise<Response> {
-	const clonedRequest = request.clone();
+	// use the stored clone if available (because the original body might be consumed)
+	const cloneSource = requestClones.get(request) || request;
+	const clonedRequest = cloneSource.clone();
 	return fetch(clonedRequest, {
 		credentials: 'include'
 	});
 }
 
 const authMiddleware: Middleware = {
-	async onRequest({ schemaPath }) {
+	async onRequest({ request, schemaPath }) {
 		// Skip auth for unprotected routes
 		if (UNPROTECTED_ROUTES.some((pathname) => schemaPath.startsWith(pathname))) {
 			return undefined;
 		}
+
+		// store a clone of the request for potential retry
+		try {
+			requestClones.set(request, request.clone());
+		} catch {
+			// ignoring errors
+		}
+
 		return undefined;
 	},
 	async onResponse({ request, response }) {
