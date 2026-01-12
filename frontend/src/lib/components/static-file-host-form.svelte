@@ -7,13 +7,23 @@
 	import { Label } from '$lib/components/ui/label/index.js';
 	import type { components } from '$lib/api/types';
 	import { ApiPaths } from '$lib/api/types';
-	import type { ComponentProps } from 'svelte';
+	import { type ComponentProps, untrack } from 'svelte';
 	import client from '$lib/apiClient';
 	import { toast } from 'svelte-sonner';
 
 	type CreateStaticFileConfig = components['schemas']['CreateStaticFileConfig'];
+	type UpdateStaticFileConfig = components['schemas']['UpdateStaticFileConfig'];
 
-	let { ...restProps }: ComponentProps<typeof Card.Root> = $props();
+	let {
+		initialData,
+		onSubmit,
+		onCancel,
+		...restProps
+	}: ComponentProps<typeof Card.Root> & {
+		initialData?: Partial<CreateStaticFileConfig | UpdateStaticFileConfig>;
+		onSubmit?: (data: CreateStaticFileConfig | UpdateStaticFileConfig) => void;
+		onCancel?: () => void;
+	} = $props();
 
 	const initialFormData: CreateStaticFileConfig = {
 		virtual_host_name: '',
@@ -26,13 +36,27 @@
 		precompressed: false
 	};
 
-	let formData = $state<CreateStaticFileConfig>({ ...initialFormData });
+	let formData = $state<CreateStaticFileConfig | UpdateStaticFileConfig>(
+		untrack(() => ({ ...initialFormData, ...initialData }))
+	);
+
 	let isSubmitting = $state(false);
 	let formError = $state('');
 	let fieldErrors = $state<Record<string, string>>({});
 
+	const isEditMode = $derived('id' in formData && typeof formData.id === 'number');
+
 	const cancel = () => {
-		formData = { ...initialFormData };
+		if (onCancel) {
+			onCancel();
+			return;
+		}
+
+		if (!initialData) {
+			formData = { ...initialFormData };
+		} else {
+			formData = { ...initialFormData, ...initialData };
+		}
 		formError = '';
 		fieldErrors = {};
 	};
@@ -44,13 +68,18 @@
 		formError = '';
 		fieldErrors = {};
 
+		if (onSubmit) {
+			onSubmit($state.snapshot(formData));
+			return;
+		}
+
 		isSubmitting = true;
 
 		try {
 			const { data, error, response } = await client.POST(
 				ApiPaths.create_static_file_config_api_configs_static_file_post,
 				{
-					body: formData
+					body: formData as CreateStaticFileConfig
 				}
 			);
 
@@ -58,7 +87,9 @@
 				toast.success('Static file server configuration created successfully!');
 				formData = { ...initialFormData };
 			} else if (response.status === 422 && error) {
-				const validationError = error as { detail?: Array<{ loc: (string | number)[]; msg: string }> };
+				const validationError = error as {
+					detail?: Array<{ loc: (string | number)[]; msg: string }>;
+				};
 				if (validationError.detail) {
 					validationError.detail.forEach((err) => {
 						const fieldName = err.loc[err.loc.length - 1];
@@ -94,7 +125,9 @@
 	</Card.Header>
 	<Card.Content>
 		{#if formError}
-			<div class="mb-4 rounded-lg border border-red-500 bg-red-50 p-4 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-400">
+			<div
+				class="mb-4 rounded-lg border border-red-500 bg-red-50 p-4 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-400"
+			>
 				{formError}
 			</div>
 		{/if}
@@ -141,9 +174,7 @@
 					<Checkbox id="cache" bind:checked={formData.cache} disabled={isSubmitting} />
 					<Field.Content>
 						<Label for="cache" class="font-normal">Enable Caching</Label>
-						<Field.Description>
-							Cache static files to improve performance.
-						</Field.Description>
+						<Field.Description>Cache static files to improve performance.</Field.Description>
 					</Field.Content>
 				</Field.Field>
 
@@ -179,14 +210,16 @@
 					<Checkbox id="compressed" bind:checked={formData.compressed} disabled={isSubmitting} />
 					<Field.Content>
 						<Label for="compressed" class="font-normal">Enable Compression</Label>
-						<Field.Description>
-							Compress files on-the-fly using gzip or brotli.
-						</Field.Description>
+						<Field.Description>Compress files on-the-fly using gzip or brotli.</Field.Description>
 					</Field.Content>
 				</Field.Field>
 
 				<Field.Field orientation="horizontal">
-					<Checkbox id="directory-listing" bind:checked={formData.directory_listing} disabled={isSubmitting} />
+					<Checkbox
+						id="directory-listing"
+						bind:checked={formData.directory_listing}
+						disabled={isSubmitting}
+					/>
 					<Field.Content>
 						<Label for="directory-listing" class="font-normal">Directory Listing</Label>
 						<Field.Description>
@@ -196,18 +229,22 @@
 				</Field.Field>
 
 				<Field.Field orientation="horizontal">
-					<Checkbox id="precompressed" bind:checked={formData.precompressed} disabled={isSubmitting} />
+					<Checkbox
+						id="precompressed"
+						bind:checked={formData.precompressed}
+						disabled={isSubmitting}
+					/>
 					<Field.Content>
 						<Label for="precompressed" class="font-normal">Precompressed Files</Label>
-						<Field.Description>
-							Serve pre-compressed files.
-						</Field.Description>
+						<Field.Description>Serve pre-compressed files.</Field.Description>
 					</Field.Content>
 				</Field.Field>
 			</Field.Group>
 
 			{#if formError}
-				<div class="rounded-lg border border-red-500 bg-red-50 p-4 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-400">
+				<div
+					class="rounded-lg border border-red-500 bg-red-50 p-4 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-400"
+				>
 					{formError}
 				</div>
 			{/if}
@@ -215,10 +252,18 @@
 			<Field.Group>
 				<Field.Field>
 					<Button type="submit" disabled={isSubmitting}>
-						{isSubmitting ? 'Creating...' : 'Create Static File Server'}
+						{isSubmitting
+							? isEditMode
+								? 'Saving...'
+								: 'Creating...'
+							: isEditMode
+								? 'Save Changes'
+								: 'Create Static File Server'}
 					</Button>
 					<Field.Description class="px-6 text-center">
-						<Button type="button" variant="outline" onclick={cancel} disabled={isSubmitting}>Cancel</Button>
+						<Button type="button" variant="outline" onclick={cancel} disabled={isSubmitting}
+							>Cancel</Button
+						>
 					</Field.Description>
 				</Field.Field>
 			</Field.Group>

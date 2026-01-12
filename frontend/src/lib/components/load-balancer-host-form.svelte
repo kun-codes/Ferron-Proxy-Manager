@@ -9,13 +9,23 @@
 	import Trash2 from '@lucide/svelte/icons/trash-2';
 	import type { components } from '$lib/api/types';
 	import { ApiPaths } from '$lib/api/types';
-	import type { ComponentProps } from 'svelte';
+	import { type ComponentProps, untrack } from 'svelte';
 	import client from '$lib/apiClient';
 	import { toast } from 'svelte-sonner';
 
 	type CreateLoadBalancerConfig = components['schemas']['CreateLoadBalancerConfig'];
+	type UpdateLoadBalancerConfig = components['schemas']['UpdateLoadBalancerConfig'];
 
-	let { ...restProps }: ComponentProps<typeof Card.Root> = $props();
+	let {
+		initialData,
+		onSubmit,
+		onCancel,
+		...restProps
+	}: ComponentProps<typeof Card.Root> & {
+		initialData?: Partial<CreateLoadBalancerConfig | UpdateLoadBalancerConfig>;
+		onSubmit?: (data: CreateLoadBalancerConfig | UpdateLoadBalancerConfig) => void;
+		onCancel?: () => void;
+	} = $props();
 
 	const initialFormData: CreateLoadBalancerConfig = {
 		virtual_host_name: '',
@@ -28,10 +38,15 @@
 		lb_health_check_window: 5000
 	};
 
-	let formData = $state<CreateLoadBalancerConfig>({ ...initialFormData });
+	let formData = $state<CreateLoadBalancerConfig | UpdateLoadBalancerConfig>(
+		untrack(() => ({ ...initialFormData, ...initialData }))
+	);
+
 	let isSubmitting = $state(false);
 	let formError = $state('');
 	let fieldErrors = $state<Record<string, string>>({});
+
+	const isEditMode = $derived('id' in formData && typeof formData.id === 'number');
 
 	const addBackendUrl = () => {
 		formData.backend_urls = [...formData.backend_urls, ''];
@@ -42,7 +57,16 @@
 	};
 
 	const cancel = () => {
-		formData = { ...initialFormData };
+		if (onCancel) {
+			onCancel();
+			return;
+		}
+
+		if (!initialData) {
+			formData = { ...initialFormData };
+		} else {
+			formData = { ...initialFormData, ...initialData };
+		}
 		formError = '';
 		fieldErrors = {};
 	};
@@ -54,13 +78,18 @@
 		formError = '';
 		fieldErrors = {};
 
+		if (onSubmit) {
+			onSubmit($state.snapshot(formData));
+			return;
+		}
+
 		isSubmitting = true;
 
 		try {
 			const { data, error, response } = await client.POST(
 				ApiPaths.create_load_balancer_config_api_configs_load_balancer_post,
 				{
-					body: formData
+					body: formData as CreateLoadBalancerConfig
 				}
 			);
 
@@ -68,7 +97,9 @@
 				toast.success('Load balancer configuration created successfully!');
 				formData = { ...initialFormData };
 			} else if (response.status === 422 && error) {
-				const validationError = error as { detail?: Array<{ loc: (string | number)[]; msg: string }> };
+				const validationError = error as {
+					detail?: Array<{ loc: (string | number)[]; msg: string }>;
+				};
 				if (validationError.detail) {
 					validationError.detail.forEach((err) => {
 						const fieldName = err.loc[err.loc.length - 1];
@@ -104,7 +135,9 @@
 	</Card.Header>
 	<Card.Content>
 		{#if formError}
-			<div class="mb-4 rounded-lg border border-red-500 bg-red-50 p-4 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-400">
+			<div
+				class="mb-4 rounded-lg border border-red-500 bg-red-50 p-4 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-400"
+			>
 				{formError}
 			</div>
 		{/if}
@@ -124,7 +157,8 @@
 					{#if fieldErrors.virtual_host_name}
 						<Field.Error>{fieldErrors.virtual_host_name}</Field.Error>
 					{:else}
-						<Field.Description>The hostname for this load balancer configuration.</Field.Description>
+						<Field.Description>The hostname for this load balancer configuration.</Field.Description
+						>
 					{/if}
 				</Field.Field>
 
@@ -153,7 +187,13 @@
 								</Button>
 							</div>
 						{/each}
-						<Button type="button" variant="outline" onclick={addBackendUrl} class="w-full" disabled={isSubmitting}>
+						<Button
+							type="button"
+							variant="outline"
+							onclick={addBackendUrl}
+							class="w-full"
+							disabled={isSubmitting}
+						>
 							<Plus class="mr-2 h-4 w-4" />
 							Add Backend URL
 						</Button>
@@ -196,7 +236,11 @@
 				</Field.Field>
 
 				<Field.Field orientation="horizontal">
-					<Checkbox id="preserve-host-header" bind:checked={formData.preserve_host_header} disabled={isSubmitting} />
+					<Checkbox
+						id="preserve-host-header"
+						bind:checked={formData.preserve_host_header}
+						disabled={isSubmitting}
+					/>
 					<Field.Content>
 						<Label for="preserve-host-header" class="font-normal">Preserve Host Header</Label>
 						<Field.Description>
@@ -206,7 +250,11 @@
 				</Field.Field>
 
 				<Field.Field orientation="horizontal">
-					<Checkbox id="lb-health-check" bind:checked={formData.lb_health_check} disabled={isSubmitting} />
+					<Checkbox
+						id="lb-health-check"
+						bind:checked={formData.lb_health_check}
+						disabled={isSubmitting}
+					/>
 					<Field.Content>
 						<Label for="lb-health-check" class="font-normal">Enable Health Checks</Label>
 						<Field.Description>
@@ -253,7 +301,9 @@
 			</Field.Group>
 
 			{#if formError}
-				<div class="rounded-lg border border-red-500 bg-red-50 p-4 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-400">
+				<div
+					class="rounded-lg border border-red-500 bg-red-50 p-4 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-400"
+				>
 					{formError}
 				</div>
 			{/if}
@@ -261,10 +311,18 @@
 			<Field.Group>
 				<Field.Field>
 					<Button type="submit" disabled={isSubmitting}>
-						{isSubmitting ? 'Creating...' : 'Create Load Balancer'}
+						{isSubmitting
+							? isEditMode
+								? 'Saving...'
+								: 'Creating...'
+							: isEditMode
+								? 'Save Changes'
+								: 'Create Load Balancer'}
 					</Button>
 					<Field.Description class="px-6 text-center">
-						<Button type="button" variant="outline" onclick={cancel} disabled={isSubmitting}>Cancel</Button>
+						<Button type="button" variant="outline" onclick={cancel} disabled={isSubmitting}
+							>Cancel</Button
+						>
 					</Field.Description>
 				</Field.Field>
 			</Field.Group>

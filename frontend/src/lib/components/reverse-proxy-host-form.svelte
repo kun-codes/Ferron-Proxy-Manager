@@ -7,13 +7,23 @@
 	import { Label } from '$lib/components/ui/label/index.js';
 	import type { components } from '$lib/api/types';
 	import { ApiPaths } from '$lib/api/types';
-	import type { ComponentProps } from 'svelte';
+	import { type ComponentProps, untrack } from 'svelte';
 	import client from '$lib/apiClient';
 	import { toast } from 'svelte-sonner';
 
 	type CreateReverseProxyConfig = components['schemas']['CreateReverseProxyConfig'];
+	type UpdateReverseProxyConfig = components['schemas']['UpdateReverseProxyConfig'];
 
-	let { ...restProps }: ComponentProps<typeof Card.Root> = $props();
+	let {
+		initialData,
+		onSubmit,
+		onCancel,
+		...restProps
+	}: ComponentProps<typeof Card.Root> & {
+		initialData?: Partial<CreateReverseProxyConfig | UpdateReverseProxyConfig>;
+		onSubmit?: (data: CreateReverseProxyConfig | UpdateReverseProxyConfig) => void;
+		onCancel?: () => void;
+	} = $props();
 
 	const initialFormData: CreateReverseProxyConfig = {
 		virtual_host_name: '',
@@ -22,16 +32,30 @@
 		cache_max_age: 3600,
 		preserve_host_header: false,
 		use_unix_socket: false,
-		unix_socket_path: ""
+		unix_socket_path: ''
 	};
 
-	let formData = $state<CreateReverseProxyConfig>({ ...initialFormData });
+	let formData = $state<CreateReverseProxyConfig | UpdateReverseProxyConfig>(
+		untrack(() => ({ ...initialFormData, ...initialData }))
+	);
+
 	let isSubmitting = $state(false);
 	let formError = $state('');
 	let fieldErrors = $state<Record<string, string>>({});
 
+	const isEditMode = $derived('id' in formData && typeof formData.id === 'number');
+
 	const cancel = () => {
-		formData = { ...initialFormData };
+		if (onCancel) {
+			onCancel();
+			return;
+		}
+
+		if (!initialData) {
+			formData = { ...initialFormData };
+		} else {
+			formData = { ...initialFormData, ...initialData };
+		}
 		formError = '';
 		fieldErrors = {};
 	};
@@ -43,13 +67,18 @@
 		formError = '';
 		fieldErrors = {};
 
+		if (onSubmit) {
+			onSubmit($state.snapshot(formData));
+			return;
+		}
+
 		isSubmitting = true;
 
 		try {
 			const { data, error, response } = await client.POST(
 				ApiPaths.create_reverse_proxy_config_api_configs_reverse_proxy_post,
 				{
-					body: formData
+					body: formData as CreateReverseProxyConfig
 				}
 			);
 
@@ -57,7 +86,9 @@
 				toast.success('Reverse proxy configuration created successfully!');
 				formData = { ...initialFormData };
 			} else if (response.status === 422 && error) {
-				const validationError = error as { detail?: Array<{ loc: (string | number)[]; msg: string }> };
+				const validationError = error as {
+					detail?: Array<{ loc: (string | number)[]; msg: string }>;
+				};
 				if (validationError.detail) {
 					validationError.detail.forEach((err) => {
 						const fieldName = err.loc[err.loc.length - 1];
@@ -87,11 +118,15 @@
 <Card.Root {...restProps}>
 	<Card.Header>
 		<Card.Title>Reverse Proxy Configuration</Card.Title>
-		<Card.Description>Configure a reverse proxy host to route requests to a backend server.</Card.Description>
+		<Card.Description
+			>Configure a reverse proxy host to route requests to a backend server.</Card.Description
+		>
 	</Card.Header>
 	<Card.Content>
 		{#if formError}
-			<div class="mb-4 rounded-lg border border-red-500 bg-red-50 p-4 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-400">
+			<div
+				class="mb-4 rounded-lg border border-red-500 bg-red-50 p-4 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-400"
+			>
 				{formError}
 			</div>
 		{/if}
@@ -111,7 +146,8 @@
 					{#if fieldErrors.virtual_host_name}
 						<Field.Error>{fieldErrors.virtual_host_name}</Field.Error>
 					{:else}
-						<Field.Description>The hostname for this reverse proxy configuration.</Field.Description>
+						<Field.Description>The hostname for this reverse proxy configuration.</Field.Description
+						>
 					{/if}
 				</Field.Field>
 
@@ -161,7 +197,11 @@
 				</Field.Field>
 
 				<Field.Field orientation="horizontal">
-					<Checkbox id="preserve-host-header" bind:checked={formData.preserve_host_header} disabled={isSubmitting} />
+					<Checkbox
+						id="preserve-host-header"
+						bind:checked={formData.preserve_host_header}
+						disabled={isSubmitting}
+					/>
 					<Field.Content>
 						<Label for="preserve-host-header" class="font-normal">Preserve Host Header</Label>
 						<Field.Description>
@@ -171,7 +211,11 @@
 				</Field.Field>
 
 				<Field.Field orientation="horizontal">
-					<Checkbox id="use-unix-socket" bind:checked={formData.use_unix_socket} disabled={isSubmitting} />
+					<Checkbox
+						id="use-unix-socket"
+						bind:checked={formData.use_unix_socket}
+						disabled={isSubmitting}
+					/>
 					<Field.Content>
 						<Label for="use-unix-socket" class="font-normal">Use Unix Socket</Label>
 						<Field.Description>
@@ -200,7 +244,9 @@
 			</Field.Group>
 
 			{#if formError}
-				<div class="rounded-lg border border-red-500 bg-red-50 p-4 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-400">
+				<div
+					class="rounded-lg border border-red-500 bg-red-50 p-4 text-sm text-red-800 dark:bg-red-900/20 dark:text-red-400"
+				>
 					{formError}
 				</div>
 			{/if}
@@ -208,10 +254,18 @@
 			<Field.Group>
 				<Field.Field>
 					<Button type="submit" disabled={isSubmitting}>
-						{isSubmitting ? 'Creating...' : 'Create Reverse Proxy'}
+						{isSubmitting
+							? isEditMode
+								? 'Saving...'
+								: 'Creating...'
+							: isEditMode
+								? 'Save Changes'
+								: 'Create Reverse Proxy'}
 					</Button>
 					<Field.Description class="px-6 text-center">
-						<Button type="button" variant="outline" onclick={cancel} disabled={isSubmitting}>Cancel</Button>
+						<Button type="button" variant="outline" onclick={cancel} disabled={isSubmitting}
+							>Cancel</Button
+						>
 					</Field.Description>
 				</Field.Field>
 			</Field.Group>
