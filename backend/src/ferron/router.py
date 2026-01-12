@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.auth.dependencies import get_current_user
 from src.config import settings
 from src.database import get_session
+from src.exceptions import InvalidTokenException
 from src.ferron import schemas, service
 from src.ferron.exceptions import (
     ConfigNotFound,
@@ -15,7 +16,14 @@ from src.ferron.exceptions import (
 )
 from src.utils import generate_error_response, merge_responses
 
-router = APIRouter(prefix="/configs", tags=["ferron-config"], dependencies=[Depends(get_current_user)])
+router = APIRouter(
+    prefix="/configs",
+    tags=["ferron-config"],
+    dependencies=[Depends(get_current_user)],
+    responses=generate_error_response(
+        InvalidTokenException,
+    ),
+)
 
 
 @router.get("/global", responses=generate_error_response(ConfigNotFound, "global configuration"))

@@ -33,8 +33,8 @@ def generate_error_response(
     status_code = exc_instance.status_code
     detail = exc_instance.detail
 
-    if isinstance(detail, dict) and "message" in detail:
-        description = detail["message"]
+    if isinstance(detail, dict) and "msg" in detail:
+        description = detail["msg"]
     else:
         description = str(detail)
 

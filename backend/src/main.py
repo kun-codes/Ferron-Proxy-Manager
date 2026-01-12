@@ -5,7 +5,8 @@ from contextlib import asynccontextmanager
 from typing import Annotated, Any
 
 import aiofiles
-from fastapi import APIRouter, Depends, FastAPI, status
+from fastapi import APIRouter, Depends, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from starlette.requests import Request
@@ -16,6 +17,7 @@ from src.auth.dependencies import get_current_user
 from src.auth.router import router as auth_router
 from src.config import settings
 from src.database import create_db_and_tables
+from src.exceptions import RateLimitExceededCustomException
 from src.ferron.constants import ConfigFileLocation
 from src.ferron.router import router as config_router
 from src.service import rate_limiter
@@ -49,6 +51,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     yield
 
 
+origins = ["http://localhost:5173", "http://localhost:3000"]
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
@@ -58,18 +61,18 @@ app = FastAPI(
 app.state.limiter = rate_limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# override the default exception handler to return a custom response
-# from: https://thedkpatel.medium.com/rate-limiting-with-fastapi-an-in-depth-guide-c4d64a776b83
+
 @app.exception_handler(RateLimitExceeded)
-async def rate_limit_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
-    return JSONResponse(
-        status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-        content={
-            "error_code": "rate_limit_exceeded",
-            "message": "Please slow down and try again later.",
-        },
-    )
+async def rate_limit_handler(_request: Request, _exc: RateLimitExceeded) -> JSONResponse:
+    raise RateLimitExceededCustomException()
 
 
 api_router = APIRouter(prefix="/api")

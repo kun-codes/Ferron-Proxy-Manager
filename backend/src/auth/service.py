@@ -11,11 +11,11 @@ from src.auth.config import auth_settings
 from src.auth.constants import ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM, REFRESH_TOKEN_EXPIRE_MINUTES
 from src.auth.exceptions import (
     InvalidCredentialsException,
-    InvalidTokenException,
     UserAlreadyExistsException,
     UserNotFoundException,
 )
 from src.auth.utils import create_access_token, create_refresh_token, get_password_hash, verify_password
+from src.exceptions import InvalidTokenException
 
 
 async def get_user_by_username(db: AsyncSession, username: str) -> models.User | None:
