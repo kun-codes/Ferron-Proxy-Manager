@@ -31,7 +31,6 @@
 		"eslint-config-prettier": "^10.1.8",
 		"eslint-plugin-svelte": "^3.13.1",
 		"globals": "^16.5.0",
-		"mode-watcher": "^1.1.0",
 		"openapi-typescript": "^7.10.1",
 		"prettier": "^3.7.4",
 		"prettier-plugin-svelte": "^3.4.0",
@@ -48,6 +47,7 @@
 		"vite": "^7.2.6"
 	},
 	"dependencies": {
+		"mode-watcher": "^1.1.0",
 		"openapi-fetch": "^0.15.0"
 	}
 }
