@@ -40,6 +40,8 @@ services:
       - "5173:5173"
     volumes:
       - ./frontend:/app
+    env_file:
+      - ./frontend/.env
     restart: unless-stopped
     depends_on:
       - backend

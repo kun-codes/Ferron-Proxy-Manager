@@ -11,6 +11,7 @@ from src.auth.config import auth_settings
 from src.auth.constants import ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM, REFRESH_TOKEN_EXPIRE_MINUTES
 from src.auth.exceptions import (
     InvalidCredentialsException,
+    SignupDisabledException,
     UserAlreadyExistsException,
     UserNotFoundException,
 )
@@ -31,6 +32,9 @@ async def get_user_by_email(db: AsyncSession, email: EmailStr) -> models.User | 
 
 
 async def create_user(db: AsyncSession, user_create: schemas.UserCreate) -> schemas.User:
+    if auth_settings.signup_disabled:
+        raise SignupDisabledException()
+
     # Check if user already exists
     if await get_user_by_username(db, user_create.username):
         raise UserAlreadyExistsException("User with same credentials already exists")
