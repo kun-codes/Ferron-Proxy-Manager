@@ -31,7 +31,7 @@ services:
             - AUTH_SECRET_KEY=${AUTH_SECRET_KEY:?AUTH_SECRET_KEY is required in production}
             - AUTH_REFRESH_SECRET_KEY=${AUTH_REFRESH_SECRET_KEY:?AUTH_REFRESH_SECRET_KEY is required in production}
             - AUTH_SIGNUP_DISABLED=${AUTH_SIGNUP_DISABLED:-false} # change this to true to disable new signups
-            - FERRON_CONTAINER_NAME=ferron  # change this if you changed the container name of ferron service
+            - FERRON_CONTAINER_NAME=ferron # change this if you changed the container name of ferron service
         restart: always
         depends_on:
             - ferron
@@ -43,6 +43,8 @@ services:
         container_name: ferron-proxy-manager-frontend
         ports:
             - "3000:3000"
+        environment:
+            - PUBLIC_AUTH_SIGNUP_DISABLED=${PUBLIC_AUTH_SIGNUP_DISABLED:-false} # keep its value same as AUTH_SIGNUP_DISABLED in backend service
         restart: always
         depends_on:
             - backend
