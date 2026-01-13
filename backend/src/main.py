@@ -2,18 +2,15 @@ import asyncio
 import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Annotated, Any
 
 import aiofiles
-from fastapi import APIRouter, Depends, FastAPI
+from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from src.auth import schemas
-from src.auth.dependencies import get_current_user
 from src.auth.router import router as auth_router
 from src.config import settings
 from src.database import create_db_and_tables
@@ -79,22 +76,3 @@ api_router = APIRouter(prefix="/api")
 api_router.include_router(auth_router)
 api_router.include_router(config_router)
 app.include_router(api_router)
-
-
-@app.get("/")
-async def root() -> dict[str, str]:
-    return {"message": "Welcome to Ferron Proxy Manager API"}
-
-
-@app.get("/protected")
-async def protected_route(
-    current_user: Annotated[schemas.User, Depends(get_current_user)],
-) -> dict[str, Any]:
-    return {
-        "message": "This is a protected route",
-        "user": {
-            "id": current_user.id,
-            "username": current_user.username,
-            "email": current_user.email,
-        },
-    }
