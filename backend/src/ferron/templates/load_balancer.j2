@@ -4,7 +4,7 @@
 {%- block proxy_location -%}
 
 {% for backend_url in backend_urls %}
-    proxy {{ backend_url }}
+    proxy "{{ backend_url }}"
 {%- endfor %}
 
 {% if lb_health_check %}
