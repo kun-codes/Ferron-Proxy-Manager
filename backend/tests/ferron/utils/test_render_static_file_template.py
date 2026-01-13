@@ -21,9 +21,9 @@ from src.ferron.utils import render_template
             TemplateType.STATIC_FILE_CONFIG,
             UpdateStaticFileConfig(id=1, virtual_host_name="static.example.com", static_files_dir="/var/www/html"),
             """
-static.example.com {
+"static.example.com" {
 
-    root /var/www/html
+    root "/var/www/html"
 
 }""",
         ),
@@ -33,9 +33,9 @@ static.example.com {
                 id=1, virtual_host_name="spa.example.com", static_files_dir="/var/www/spa", use_spa=True
             ),
             """
-spa.example.com {
+"spa.example.com" {
 
-    root /var/www/spa
+    root "/var/www/spa"
 
     rewrite "^/.*" "/" directory=#false file=#false last=#true
 
@@ -47,9 +47,9 @@ spa.example.com {
                 id=1, virtual_host_name="uncompressed.example.com", static_files_dir="/var/www/site", compressed=False
             ),
             """
-uncompressed.example.com {
+"uncompressed.example.com" {
 
-    root /var/www/site
+    root "/var/www/site"
 
     compressed #false
 
@@ -61,9 +61,9 @@ uncompressed.example.com {
                 id=1, virtual_host_name="listing.example.com", static_files_dir="/var/www/files", directory_listing=True
             ),
             """
-listing.example.com {
+"listing.example.com" {
 
-    root /var/www/files
+    root "/var/www/files"
 
     directory_listing
 
@@ -79,9 +79,9 @@ listing.example.com {
                 cache_max_age=7200,
             ),
             """
-cached.example.com {
+"cached.example.com" {
 
-    root /var/www/cached
+    root "/var/www/cached"
 
     // for in memory caching to speed up websites
     cache
@@ -99,9 +99,9 @@ cached.example.com {
                 cache_max_age=DEFAULT_CACHE_MAX_AGE,
             ),
             f"""
-cached-default.example.com {{
+"cached-default.example.com" {{
 
-    root /var/www/default-cache
+    root "/var/www/default-cache"
 
     // for in memory caching to speed up websites
     cache
@@ -118,9 +118,9 @@ cached-default.example.com {{
                 precompressed=True,
             ),
             """
-precompressed.example.com {
+"precompressed.example.com" {
 
-    root /var/www/precompressed
+    root "/var/www/precompressed"
 
     precompressed
 
@@ -136,9 +136,9 @@ precompressed.example.com {
                 compressed=False,
             ),
             """
-spa-uncompressed.example.com {
+"spa-uncompressed.example.com" {
 
-    root /var/www/spa-app
+    root "/var/www/spa-app"
 
     rewrite "^/.*" "/" directory=#false file=#false last=#true
 
@@ -157,9 +157,9 @@ spa-uncompressed.example.com {
                 cache_max_age=1800,
             ),
             """
-spa-cached.example.com {
+"spa-cached.example.com" {
 
-    root /var/www/spa-cached
+    root "/var/www/spa-cached"
 
     rewrite "^/.*" "/" directory=#false file=#false last=#true
 
@@ -179,9 +179,9 @@ spa-cached.example.com {
                 precompressed=True,
             ),
             """
-listing-precompressed.example.com {
+"listing-precompressed.example.com" {
 
-    root /var/www/files-compressed
+    root "/var/www/files-compressed"
 
     directory_listing
 
@@ -200,9 +200,9 @@ listing-precompressed.example.com {
                 precompressed=True,
             ),
             """
-cached-precompressed.example.com {
+"cached-precompressed.example.com" {
 
-    root /var/www/optimized
+    root "/var/www/optimized"
 
     // for in memory caching to speed up websites
     cache
@@ -226,9 +226,9 @@ cached-precompressed.example.com {
                 precompressed=True,
             ),
             """
-full-featured.example.com {
+"full-featured.example.com" {
 
-    root /var/www/full
+    root "/var/www/full"
 
     rewrite "^/.*" "/" directory=#false file=#false last=#true
 
@@ -250,9 +250,9 @@ full-featured.example.com {
                 id=1, virtual_host_name="*.wildcard.example.com", static_files_dir="/var/www/wildcard"
             ),
             """
-*.wildcard.example.com {
+"*.wildcard.example.com" {
 
-    root /var/www/wildcard
+    root "/var/www/wildcard"
 
 }""",
         ),
@@ -267,9 +267,9 @@ full-featured.example.com {
                 cache_max_age=86400,
             ),
             """
-docs.example.com {
+"docs.example.com" {
 
-    root /usr/share/docs
+    root "/usr/share/docs"
 
     directory_listing
 
@@ -291,9 +291,9 @@ docs.example.com {
                 precompressed=True,
             ),
             """
-app.example.com {
+"app.example.com" {
 
-    root /opt/app/dist
+    root "/opt/app/dist"
 
     rewrite "^/.*" "/" directory=#false file=#false last=#true
 
@@ -316,9 +316,9 @@ app.example.com {
                 cache=False,
             ),
             """
-blog.example.com {
+"blog.example.com" {
 
-    root /var/www/blog
+    root "/var/www/blog"
 
 }""",
         ),
@@ -331,9 +331,9 @@ blog.example.com {
                 use_spa=DEFAULT_USE_SPA,
             ),
             """
-default-spa.example.com {
+"default-spa.example.com" {
 
-    root /var/www/default-spa
+    root "/var/www/default-spa"
 
 }""",
         ),
@@ -346,9 +346,9 @@ default-spa.example.com {
                 compressed=DEFAULT_COMPRESSED,
             ),
             """
-default-compressed.example.com {
+"default-compressed.example.com" {
 
-    root /var/www/default-compressed
+    root "/var/www/default-compressed"
 
 }""",
         ),
@@ -361,9 +361,9 @@ default-compressed.example.com {
                 directory_listing=DEFAULT_DIRECTORY_LISTING,
             ),
             """
-default-listing.example.com {
+"default-listing.example.com" {
 
-    root /var/www/default-listing
+    root "/var/www/default-listing"
 
 }""",
         ),
@@ -376,9 +376,9 @@ default-listing.example.com {
                 precompressed=DEFAULT_PRECOMPRESSED,
             ),
             """
-default-precompressed.example.com {
+"default-precompressed.example.com" {
 
-    root /var/www/default-precompressed
+    root "/var/www/default-precompressed"
 
 }""",
         ),
@@ -395,9 +395,9 @@ default-precompressed.example.com {
                 cache=False,
             ),
             """
-all-defaults.example.com {
+"all-defaults.example.com" {
 
-    root /var/www/all-defaults
+    root "/var/www/all-defaults"
 
 }""",
         ),

@@ -2,7 +2,7 @@
 {%- extends "_base_virtual_host.j2" -%}
 
 {%- block body %}
-    root {{ static_files_dir }}
+    root "{{ static_files_dir }}"
 {% if use_spa %}
     rewrite "^/.*" "/" directory=#false file=#false last=#true
 {% endif -%}

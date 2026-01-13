@@ -6,9 +6,9 @@
 {%- block proxy_location %}
 
 {%- if use_unix_socket and unix_socket_path is defined %}
-    proxy {{ backend_url }} unix="{{ unix_socket_path }}"
+    proxy "{{ backend_url }}" unix="{{ unix_socket_path }}"
 {% else %}
-    proxy {{ backend_url }}
+    proxy "{{ backend_url }}"
 {% endif -%}
 
 {%- endblock -%}
