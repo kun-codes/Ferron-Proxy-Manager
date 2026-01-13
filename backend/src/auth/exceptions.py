@@ -6,6 +6,13 @@ class AuthException(HTTPException):
         super().__init__(status_code=status_code, detail=detail)
 
 
+class SignupDisabledException(AuthException):
+    def __init__(self, message: str = "User signup is disabled") -> None:
+        super().__init__(
+            detail={"error_code": "signup_disabled", "msg": message}, status_code=status.HTTP_403_FORBIDDEN
+        )
+
+
 class InvalidCredentialsException(AuthException):
     def __init__(self, message: str = "Invalid credentials") -> None:
         super().__init__(

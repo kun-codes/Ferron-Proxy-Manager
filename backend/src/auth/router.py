@@ -10,6 +10,7 @@ from src.auth.constants import ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE
 from src.auth.dependencies import get_current_user
 from src.auth.exceptions import (
     InvalidCredentialsException,
+    SignupDisabledException,
     UserAlreadyExistsException,
     UserNotFoundException,
 )
@@ -28,6 +29,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
     responses=merge_responses(
         generate_error_response(UserAlreadyExistsException, "User with same credentials already exists"),
         generate_error_response(RateLimitExceededCustomException),
+        generate_error_response(SignupDisabledException),
     ),
 )
 @rate_limiter.limit("3/15minute")
