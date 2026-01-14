@@ -1,6 +1,7 @@
 import {type Handle, redirect} from '@sveltejs/kit';
 import {env} from '$env/dynamic/private';
 import {ApiPaths, type components} from '$lib/api/types';
+import * as cookie from 'cookie';
 
 if (!env.BACKEND_URL) {
     throw new Error('BACKEND_URL environment variable is not defined');
@@ -56,12 +57,17 @@ async function getAuthenticatedUser(cookieHeader: string): Promise<AuthCheckResu
                 const setCookieHeaders = refreshResponse.headers.getSetCookie();
                 result.setCookieHeaders.push(...setCookieHeaders);
 
-                const updatedCookieHeader = setCookieHeaders
-                    .map((header) => {
-                        const [nameValue] = header.split(';');
-                        return nameValue.trim();
-                    })
-                    .join('; ');
+                const existingCookies = cookie.parseCookie(cookieHeader);
+
+                const newCookies: Record<string, string> = {};
+                for (const header of setCookieHeaders) {
+                    const parsed = cookie.parseCookie(header);
+                    Object.assign(newCookies, parsed);
+                }
+
+                const mergedCookies = {...existingCookies, ...newCookies};
+
+                const updatedCookieHeader = cookie.stringifyCookie(mergedCookies);
 
                 const retryMeResponse = await fetch(
                     `${API_BASE_URL}${ApiPaths.get_current_user_info_api_auth_me_get}`,
@@ -74,14 +80,8 @@ async function getAuthenticatedUser(cookieHeader: string): Promise<AuthCheckResu
 
                 if (retryMeResponse.ok) {
                     result.user = (await retryMeResponse.json()) as User;
-                } else {
-                    console.error('Error getting user after token refresh:', retryMeResponse.status);
                 }
-            } else {
-                console.error('Error refreshing token:', refreshResponse.status);
             }
-        } else {
-            console.error('Error checking authentication, status:', meResponse.status);
         }
 
         return result;

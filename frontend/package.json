@@ -47,6 +47,7 @@
 		"vite": "^7.2.6"
 	},
 	"dependencies": {
+		"cookie": "^1.1.1",
 		"mode-watcher": "^1.1.0",
 		"openapi-fetch": "^0.15.0"
 	}
