@@ -13,7 +13,7 @@ from starlette.responses import JSONResponse
 
 from src.auth.router import router as auth_router
 from src.config import settings
-from src.database import create_db_and_tables
+from src.database import run_migrations
 from src.exceptions import RateLimitExceededCustomException
 from src.ferron.constants import ConfigFileLocation
 from src.ferron.router import router as config_router
@@ -44,7 +44,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         async with aiofiles.open("/etc/ferron.kdl", "a") as f:
             await f.write(f'include "{ConfigFileLocation.MAIN_CONFIG.value}"\n')
 
-    await create_db_and_tables()
+    await asyncio.to_thread(run_migrations)
     yield
 
 
