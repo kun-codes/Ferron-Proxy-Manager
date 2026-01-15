@@ -1,12 +1,13 @@
 from typing import AsyncGenerator
 
+from alembic.config import Config
 from sqlalchemy import event
 from sqlalchemy.dialects.sqlite.aiosqlite import AsyncAdapt_aiosqlite_connection
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.pool.base import _ConnectionRecord
-from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession as SQLModelAsyncSession
 
+from alembic import command
 from src.config import settings
 
 database_url = settings.database_url
@@ -29,9 +30,9 @@ def set_sqlite_pragma(
     cursor.close()
 
 
-async def create_db_and_tables() -> None:
-    async with engine.begin() as conn:
-        await conn.run_sync(SQLModel.metadata.create_all)
+def run_migrations() -> None:
+    cfg = Config("alembic.ini")
+    command.upgrade(cfg, "head")
 
 
 async def get_session() -> AsyncGenerator[SQLModelAsyncSession, None]:
