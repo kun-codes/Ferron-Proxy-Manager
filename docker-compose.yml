@@ -45,6 +45,8 @@ services:
             - "3000:3000"
         environment:
             - PUBLIC_AUTH_SIGNUP_DISABLED=${PUBLIC_AUTH_SIGNUP_DISABLED:-false} # keep its value same as AUTH_SIGNUP_DISABLED in backend service
+            - BACKEND_URL=${BACKEND_URL:-http://localhost:8000}
+            - PUBLIC_BACKEND_URL=${PUBLIC_BACKEND_URL:-http://localhost:8000}
         restart: always
         depends_on:
             - backend

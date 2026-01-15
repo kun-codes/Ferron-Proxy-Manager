@@ -2,6 +2,12 @@ import createClient, { type Middleware } from 'openapi-fetch';
 import type { paths } from './api/types';
 import { ApiPaths } from './api/types';
 import { goto } from '$app/navigation';
+import { env } from '$env/dynamic/public';
+
+// Validate PUBLIC_BACKEND_URL is defined
+if (!env.PUBLIC_BACKEND_URL) {
+	throw new Error('PUBLIC_BACKEND_URL environment variable is not defined');
+}
 
 const UNPROTECTED_ROUTES = [
 	ApiPaths.signup_api_auth_signup_post,
@@ -34,7 +40,7 @@ let refreshPromise: Promise<boolean> | null = null;
 const requestClones = new WeakMap<Request, Request>();
 
 const client = createClient<paths>({
-	baseUrl: 'http://localhost:8000',
+	baseUrl: env.PUBLIC_BACKEND_URL,
 	credentials: 'include'
 });
 
