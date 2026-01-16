@@ -1,4 +1,4 @@
-import {type Handle, redirect} from '@sveltejs/kit';
+import {type Handle} from '@sveltejs/kit';
 import {env} from '$env/dynamic/private';
 import {ApiPaths, type components} from '$lib/api/types';
 import * as cookie from 'cookie';
@@ -102,19 +102,23 @@ export const handle: Handle = async ({event, resolve}) => {
 
     const path = event.url.pathname;
 
+    let redirectTo: string | null = null;
+
     // only logged in users can access paths starting with /dashboard
-    if (path.startsWith('/dashboard')) {
-        if (!user) {
-            throw redirect(303, '/login');
-        }
+    if (path.startsWith('/dashboard') && !user) {
+        redirectTo = '/login';
     }
 
     // redirect logged in users away from login/signup pages
     if (user && (path === '/login' || path === '/signup')) {
-        throw redirect(303, '/dashboard');
+        redirectTo = '/dashboard';
     }
 
-    const response = await resolve(event);
+    // create a redirect response if redirecting, response is being created instead of throwing a redirect because
+    // throwing a redirect will not allow us to execute code written after the throw redirect()
+    const response = redirectTo
+        ? new Response(null, {status: 303, headers: {location: redirectTo}})
+        : await resolve(event);
 
     if (setCookieHeaders.length > 0) {
         for (const setCookie of setCookieHeaders) {
