@@ -1,20 +1,19 @@
 """initial schema
 
-Revision ID: f334f396e38f
+Revision ID: c96b5bfa07e5
 Revises:
-Create Date: 2026-01-15 16:24:27.429426
+Create Date: 2026-01-16 12:35:13.133323
 
 """
 
 from typing import Sequence, Union
 
 import sqlalchemy as sa
-import sqlmodel.sql.sqltypes
 
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "f334f396e38f"
+revision: str = "c96b5bfa07e5"
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -26,9 +25,9 @@ def upgrade() -> None:
     op.create_table(
         "auth_users",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("username", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-        sa.Column("email", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-        sa.Column("hashed_password", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+        sa.Column("username", sa.String(), nullable=False),
+        sa.Column("email", sa.String(), nullable=False),
+        sa.Column("hashed_password", sa.String(), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )
     with op.batch_alter_table("auth_users", schema=None) as batch_op:
@@ -50,14 +49,14 @@ def upgrade() -> None:
     op.create_table(
         "ferron_virtual_host",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("virtual_host_name", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+        sa.Column("virtual_host_name", sa.String(), nullable=False),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("virtual_host_name"),
     )
     op.create_table(
         "auth_refresh_tokens",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("token", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+        sa.Column("token", sa.String(), nullable=False),
         sa.Column("user_id", sa.Integer(), nullable=False),
         sa.Column("expires_at", sa.DateTime(), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=False),
@@ -90,9 +89,9 @@ def upgrade() -> None:
         sa.Column("preserve_host_header", sa.Boolean(), nullable=False),
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("virtual_host_id", sa.Integer(), nullable=False),
-        sa.Column("backend_url", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+        sa.Column("backend_url", sa.String(), nullable=False),
         sa.Column("use_unix_socket", sa.Boolean(), nullable=False),
-        sa.Column("unix_socket_path", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+        sa.Column("unix_socket_path", sa.String(), nullable=False),
         sa.ForeignKeyConstraint(["virtual_host_id"], ["ferron_virtual_host.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -102,7 +101,7 @@ def upgrade() -> None:
         sa.Column("cache_max_age", sa.Integer(), nullable=False),
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("virtual_host_id", sa.Integer(), nullable=False),
-        sa.Column("static_files_dir", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+        sa.Column("static_files_dir", sa.String(), nullable=False),
         sa.Column("use_spa", sa.Boolean(), nullable=False),
         sa.Column("compressed", sa.Boolean(), nullable=False),
         sa.Column("directory_listing", sa.Boolean(), nullable=False),
@@ -115,7 +114,7 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("virtual_host_id", sa.Integer(), nullable=False),
         sa.Column("used_in_load_balancer", sa.Integer(), nullable=False),
-        sa.Column("backend_url", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+        sa.Column("backend_url", sa.String(), nullable=False),
         sa.ForeignKeyConstraint(["used_in_load_balancer"], ["ferron_load_balancer_config.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["virtual_host_id"], ["ferron_virtual_host.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
