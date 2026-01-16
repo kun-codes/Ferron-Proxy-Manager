@@ -1,10 +1,7 @@
 from logging.config import fileConfig
-from typing import Any
 
-from alembic.autogenerate.api import AutogenContext
 from sqlalchemy import engine_from_config, pool
 from sqlmodel import SQLModel
-from sqlmodel.sql.sqltypes import AutoString
 
 from alembic import context
 from src.auth.models import *  # noqa: F403 # to import all tables automatically
@@ -38,18 +35,6 @@ target_metadata = SQLModel.metadata
 # ... etc.
 
 
-def render_item(type_: str, obj: Any, autogen_context: AutogenContext) -> str | bool:  # noqa: ANN401
-    # https://alembic.sqlalchemy.org/en/latest/autogenerate.html#affecting-the-rendering-of-types-themselves
-    # this will render sqlmodel.sql.sqltypes.AutoString() as sa.String()
-    # this is required because in comparison of refresh_token (which is stored as a string) cookie,
-    # sqlmodel.sql.sqltypes.AutoString() fails for some reason
-    if type_ == "type" and isinstance(obj, AutoString):
-        return "sa.String()"
-
-    # default rendering for other items
-    return False
-
-
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
 
@@ -68,7 +53,6 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
-        render_item=render_item,
     )
 
     with context.begin_transaction():
@@ -92,7 +76,6 @@ def run_migrations_online() -> None:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
-            render_item=render_item,
             render_as_batch=True,  # https://stackoverflow.com/a/32510603
         )
 
