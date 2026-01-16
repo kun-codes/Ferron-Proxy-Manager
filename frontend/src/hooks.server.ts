@@ -114,6 +114,14 @@ export const handle: Handle = async ({event, resolve}) => {
         redirectTo = '/dashboard';
     }
 
+    if (path === '/') {
+        if (user) {
+            redirectTo = '/dashboard'
+        } else {
+            redirectTo = '/login'
+        }
+    }
+
     // create a redirect response if redirecting, response is being created instead of throwing a redirect because
     // throwing a redirect will not allow us to execute code written after the throw redirect()
     const response = redirectTo
