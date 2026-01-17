@@ -8,16 +8,17 @@ from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+from sqlmodel.ext.asyncio.session import AsyncSession as SQLModelAsyncSession
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from src.auth.router import router as auth_router
 from src.config import settings
-from src.database import run_migrations
+from src.database import engine, run_migrations
 from src.exceptions import RateLimitExceededCustomException
 from src.ferron.constants import ConfigFileLocation
 from src.ferron.router import router as config_router
-from src.service import rate_limiter
+from src.service import create_ferron_global_config, rate_limiter
 
 
 @asynccontextmanager
@@ -45,6 +46,11 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
             await f.write(f'include "{ConfigFileLocation.MAIN_CONFIG.value}"\n')
 
     await asyncio.to_thread(run_migrations)
+
+    # check if ferron global configuration exists, if not then create a default one
+    async with SQLModelAsyncSession(engine) as session:
+        await create_ferron_global_config(session)
+
     yield
 
 
