@@ -69,7 +69,7 @@ async def update_global_config(
     if not existing_config:
         raise exceptions.ConfigNotFound(config_type="global configuration")
 
-    update_data = global_config_data.model_dump(exclude_defaults=True)
+    update_data = global_config_data.model_dump()
     for field, value in update_data.items():
         setattr(existing_config, field, value)
 
@@ -164,7 +164,7 @@ async def update_reverse_proxy_config(
 
         existing_config.virtual_host.virtual_host_name = reverse_proxy_config_data.virtual_host_name
 
-    update_data = reverse_proxy_config_data.model_dump(exclude_defaults=True, exclude={"virtual_host_name", "id"})
+    update_data = reverse_proxy_config_data.model_dump(exclude={"virtual_host_name", "id"})
     for field, value in update_data.items():
         setattr(existing_config, field, value)
 
@@ -328,9 +328,7 @@ async def update_load_balancer_config(
 
         existing_config.virtual_host.virtual_host_name = load_balancer_config_data.virtual_host_name
 
-    update_data = load_balancer_config_data.model_dump(
-        exclude_defaults=True, exclude={"virtual_host_name", "id", "backend_urls"}
-    )
+    update_data = load_balancer_config_data.model_dump(exclude={"virtual_host_name", "id", "backend_urls"})
     for field, value in update_data.items():
         setattr(existing_config, field, value)
 
@@ -495,7 +493,7 @@ async def update_static_file_config(
 
         existing_config.virtual_host.virtual_host_name = static_file_config_data.virtual_host_name
 
-    update_data = static_file_config_data.model_dump(exclude_defaults=True, exclude={"virtual_host_name", "id"})
+    update_data = static_file_config_data.model_dump(exclude={"virtual_host_name", "id"})
     for field, value in update_data.items():
         setattr(existing_config, field, value)
 
