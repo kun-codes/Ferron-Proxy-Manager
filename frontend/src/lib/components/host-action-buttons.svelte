@@ -2,7 +2,7 @@
     import { Button } from '$lib/components/ui/button/index.js';
     import Trash2 from '@lucide/svelte/icons/trash-2';
     import Edit from '@lucide/svelte/icons/edit';
-    
+
     let { host, onEdit, onDelete } = $props();
 
     let isDeleteConfirm = $state(false);
@@ -13,7 +13,6 @@
             isDeleteConfirm = false;
         } else {
             isDeleteConfirm = true;
-            // Auto reset confirmation after 3 seconds
             setTimeout(() => {
                 isDeleteConfirm = false;
             }, 3000);
@@ -26,11 +25,11 @@
         <Edit class="h-4 w-4" />
         <span class="sr-only">Edit</span>
     </Button>
-    <Button 
-        variant={isDeleteConfirm ? "destructive" : "outline"} 
-        size="icon" 
+    <Button
+        variant={isDeleteConfirm ? 'destructive' : 'outline'}
+        size="icon"
         onclick={handleDelete}
-        class={isDeleteConfirm ? "bg-red-600 hover:bg-red-700 text-white" : ""}
+        class={isDeleteConfirm ? 'bg-red-600 text-white hover:bg-red-700' : ''}
     >
         <Trash2 class="h-4 w-4" />
         <span class="sr-only">Delete</span>

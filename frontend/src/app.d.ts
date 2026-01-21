@@ -3,15 +3,15 @@
 import type { components } from '$lib/api/types';
 
 declare global {
-	namespace App {
-		// interface Error {}
-		interface Locals {
-			user?: components['schemas']['User'];
-		}
-		// interface PageData {}
-		// interface PageState {}
-		// interface Platform {}
-	}
+    namespace App {
+        // interface Error {}
+        interface Locals {
+            user?: components['schemas']['User'];
+        }
+        // interface PageData {}
+        // interface PageState {}
+        // interface Platform {}
+    }
 }
 
 export {};
