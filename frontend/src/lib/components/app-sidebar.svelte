@@ -52,7 +52,6 @@
         <div class="pt-3 pl-2 text-lg font-semibold">Ferron Proxy Manager</div>
     </Sidebar.Header>
     <Sidebar.Content>
-        <!-- We create a Sidebar.Group for each parent. -->
         {#each data.navMain as group (group.title)}
             <Sidebar.Group>
                 <Sidebar.GroupLabel>{group.title}</Sidebar.GroupLabel>

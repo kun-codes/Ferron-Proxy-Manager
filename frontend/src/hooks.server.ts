@@ -1,6 +1,6 @@
-import {type Handle} from '@sveltejs/kit';
-import {env} from '$env/dynamic/private';
-import {ApiPaths, type components} from '$lib/api/types';
+import { type Handle } from '@sveltejs/kit';
+import { env } from '$env/dynamic/private';
+import { ApiPaths, type components } from '$lib/api/types';
 import * as cookie from 'cookie';
 
 if (!env.BACKEND_URL) {
@@ -65,7 +65,7 @@ async function getAuthenticatedUser(cookieHeader: string): Promise<AuthCheckResu
                     Object.assign(newCookies, parsed);
                 }
 
-                const mergedCookies = {...existingCookies, ...newCookies};
+                const mergedCookies = { ...existingCookies, ...newCookies };
 
                 const updatedCookieHeader = cookie.stringifyCookie(mergedCookies);
 
@@ -91,10 +91,10 @@ async function getAuthenticatedUser(cookieHeader: string): Promise<AuthCheckResu
     }
 }
 
-export const handle: Handle = async ({event, resolve}) => {
+export const handle: Handle = async ({ event, resolve }) => {
     const cookieHeader = event.request.headers.get('cookie') || '';
 
-    const {user, setCookieHeaders} = await getAuthenticatedUser(cookieHeader);
+    const { user, setCookieHeaders } = await getAuthenticatedUser(cookieHeader);
 
     if (user) {
         event.locals.user = user;
@@ -116,16 +116,16 @@ export const handle: Handle = async ({event, resolve}) => {
 
     if (path === '/') {
         if (user) {
-            redirectTo = '/dashboard'
+            redirectTo = '/dashboard';
         } else {
-            redirectTo = '/login'
+            redirectTo = '/login';
         }
     }
 
     // create a redirect response if redirecting, response is being created instead of throwing a redirect because
     // throwing a redirect will not allow us to execute code written after the throw redirect()
     const response = redirectTo
-        ? new Response(null, {status: 303, headers: {location: redirectTo}})
+        ? new Response(null, { status: 303, headers: { location: redirectTo } })
         : await resolve(event);
 
     if (setCookieHeaders.length > 0) {
