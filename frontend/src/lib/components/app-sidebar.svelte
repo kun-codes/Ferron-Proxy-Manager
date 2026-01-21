@@ -12,11 +12,11 @@
                 ]
             },
             {
-                title: 'Global Config',
+                title: 'Global Configuration',
                 url: '#',
                 items: [
                     {
-                        title: 'Manage Global Config',
+                        title: 'Manage Global Configuration',
                         url: '/dashboard/global-config/manage'
                     }
                 ]
