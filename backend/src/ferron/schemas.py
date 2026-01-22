@@ -1,4 +1,5 @@
 from pydantic import BaseModel, ConfigDict, Field
+from pydantic_extra_types.domain import DomainStr
 
 from src.ferron.constants import (
     DEFAULT_CACHE_ENABLED,
@@ -41,7 +42,7 @@ class GlobalTemplateConfig(TemplateConfig):
 class BaseVirtualHost(TemplateConfig):
     model_config = ConfigDict(from_attributes=True)
 
-    virtual_host_name: str
+    virtual_host_name: DomainStr
 
 
 class Cache(TemplateConfig):

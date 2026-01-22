@@ -1,5 +1,6 @@
 from typing import List, Optional
 
+from pydantic_extra_types.domain import DomainStr
 from sqlalchemy import Column, ForeignKey, Integer
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -43,7 +44,7 @@ class VirtualHost(SQLModel, table=True):
     __tablename__ = "ferron_virtual_host"
 
     id: int = Field(default=None, primary_key=True)
-    virtual_host_name: str = Field(unique=True)
+    virtual_host_name: DomainStr = Field(unique=True)
 
     reverse_proxy_config: Optional["ReverseProxyConfig"] = Relationship(
         back_populates="virtual_host",
