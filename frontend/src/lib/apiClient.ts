@@ -1,12 +1,7 @@
-import createClient, { type Middleware } from 'openapi-fetch';
-import type { paths } from './api/types';
-import { ApiPaths } from './api/types';
-import { goto } from '$app/navigation';
-import { env } from '$env/dynamic/public';
-
-if (!env.PUBLIC_BACKEND_URL) {
-    throw new Error('PUBLIC_BACKEND_URL environment variable is not defined');
-}
+import createClient, {type Middleware} from 'openapi-fetch';
+import type {paths} from './api/types';
+import {ApiPaths} from './api/types';
+import {goto} from '$app/navigation';
 
 const UNPROTECTED_ROUTES = [
     ApiPaths.signup_api_auth_signup_post,
@@ -36,8 +31,9 @@ let isRefreshing = false;
 let refreshPromise: Promise<boolean> | null = null;
 const requestClones = new WeakMap<Request, Request>();
 
+// base url is blank because all requests are proxied through the sveltekit server to the fastapi backend
 const client = createClient<paths>({
-    baseUrl: env.PUBLIC_BACKEND_URL,
+    baseUrl: '',
     credentials: 'include'
 });
 
@@ -51,7 +47,7 @@ async function refreshAccessToken(): Promise<boolean> {
 
     refreshPromise = (async () => {
         try {
-            const { response } = await client.POST(
+            const {response} = await client.POST(
                 ApiPaths.refresh_token_api_auth_token_refresh_post
             );
 
@@ -84,7 +80,7 @@ async function retryRequest(request: Request): Promise<Response> {
 }
 
 const authMiddleware: Middleware = {
-    async onRequest({ request, schemaPath }) {
+    async onRequest({request, schemaPath}) {
         if (UNPROTECTED_ROUTES.some((pathname) => schemaPath.startsWith(pathname))) {
             return undefined;
         }
@@ -97,7 +93,7 @@ const authMiddleware: Middleware = {
 
         return undefined;
     },
-    async onResponse({ request, response }) {
+    async onResponse({request, response}) {
         if (response.status !== 401) {
             return response;
         }
