@@ -61,8 +61,10 @@ async function getAuthenticatedUser(cookieHeader: string): Promise<AuthCheckResu
 
                 const newCookies: Record<string, string> = {};
                 for (const header of setCookieHeaders) {
-                    const parsed = cookie.parseCookie(header);
-                    Object.assign(newCookies, parsed);
+                    const parsed = cookie.parseSetCookie(header);
+                    if (parsed.name && parsed.value !== undefined) {
+                        newCookies[parsed.name] = parsed.value;
+                    }
                 }
 
                 const mergedCookies = { ...existingCookies, ...newCookies };
@@ -91,7 +93,58 @@ async function getAuthenticatedUser(cookieHeader: string): Promise<AuthCheckResu
     }
 }
 
+async function proxyApiRequest(event: Parameters<Handle>[0]['event']): Promise<Response> {
+    const cookieHeader = event.request.headers.get('cookie') || '';
+    const path = event.url.pathname;
+    const searchParams = event.url.search;
+    const method = event.request.method;
+
+    const headersToForward: Record<string, string> = {
+        Cookie: cookieHeader
+    };
+
+    const contentType = event.request.headers.get('content-type');
+    if (contentType) {
+        headersToForward['Content-Type'] = contentType;
+    }
+
+    let body: BodyInit | null = null;
+    if (method !== 'GET' && method !== 'HEAD') {
+        body = await event.request.text();
+    }
+
+    const backendResponse = await fetch(`${API_BASE_URL}${path}${searchParams}`, {
+        method,
+        headers: headersToForward,
+        body
+    });
+
+    const responseHeaders = new Headers();
+
+    const backendContentType = backendResponse.headers.get('content-type');
+    if (backendContentType) {
+        responseHeaders.set('content-type', backendContentType);
+    }
+
+    const setCookieHeaders = backendResponse.headers.getSetCookie();
+    for (const setCookie of setCookieHeaders) {
+        responseHeaders.append('set-cookie', setCookie);
+    }
+
+    return new Response(backendResponse.body, {
+        status: backendResponse.status,
+        statusText: backendResponse.statusText,
+        headers: responseHeaders
+    });
+}
+
 export const handle: Handle = async ({ event, resolve }) => {
+    const path = event.url.pathname;
+
+    if (path.startsWith('/api/')) {
+        return proxyApiRequest(event);
+    }
+
     const cookieHeader = event.request.headers.get('cookie') || '';
 
     const { user, setCookieHeaders } = await getAuthenticatedUser(cookieHeader);
@@ -99,8 +152,6 @@ export const handle: Handle = async ({ event, resolve }) => {
     if (user) {
         event.locals.user = user;
     }
-
-    const path = event.url.pathname;
 
     let redirectTo: string | null = null;
 
