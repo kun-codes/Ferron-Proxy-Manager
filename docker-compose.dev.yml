@@ -1,51 +1,50 @@
 services:
-  # Ferron container
-  ferron:
-    image: ferronserver/ferron:2
-    container_name: ferron
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - "ferron-acme:/var/cache/ferron-acme" # for persistent automatic TLS cache
-      - "./backend/ferron.kdl:/etc/ferron.kdl"
-      - "ferron-sub-configs:/etc/ferron-proxy-manager/"
-    restart: always
+    ferron:
+        image: ferronserver/ferron:2
+        container_name: ferron
+        ports:
+            - "80:80"
+            - "443:443"
+        volumes:
+            - "ferron-acme:/var/cache/ferron-acme" # for persistent automatic TLS cache
+            - "./backend/ferron.kdl:/etc/ferron.kdl"
+            - "ferron-sub-configs:/etc/ferron-proxy-manager/"
+        restart: always
 
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile.dev
-    container_name: ferron-proxy-manager-backend
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./backend:/app
-      - ./backend/data:/app/data
-      - "./backend/ferron.kdl:/etc/ferron.kdl"
-      - "ferron-sub-configs:/etc/ferron-proxy-manager/"
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-    env_file:
-      - ./backend/.env
-    restart: unless-stopped
-    depends_on:
-      - ferron
+    backend:
+        build:
+            context: ./backend
+            dockerfile: Dockerfile.dev
+        container_name: ferron-proxy-manager-backend
+        ports:
+            - "8000:8000"
+        volumes:
+            - ./backend:/app
+            - ./backend/data:/app/data
+            - "./backend/ferron.kdl:/etc/ferron.kdl"
+            - "ferron-sub-configs:/etc/ferron-proxy-manager/"
+            - "/var/run/docker.sock:/var/run/docker.sock:ro"
+        env_file:
+            - ./backend/.env
+        restart: unless-stopped
+        depends_on:
+            - ferron
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.dev
-    container_name: ferron-proxy-manager-frontend
-    ports:
-      - "5173:5173"
-    volumes:
-      - ./frontend:/app
-    env_file:
-      - ./frontend/.env
-    restart: unless-stopped
-    depends_on:
-      - backend
+    frontend:
+        build:
+            context: ./frontend
+            dockerfile: Dockerfile.dev
+        container_name: ferron-proxy-manager-frontend
+        ports:
+            - "5173:5173"
+        volumes:
+            - ./frontend:/app
+        env_file:
+            - ./frontend/.env
+        restart: unless-stopped
+        depends_on:
+            - backend
 
 volumes:
-  ferron-acme:
-  ferron-sub-configs:
+    ferron-acme:
+    ferron-sub-configs:

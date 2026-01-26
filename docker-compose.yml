@@ -1,5 +1,4 @@
 services:
-    # Ferron container
     ferron:
         image: ferronserver/ferron:2
         container_name: ferron
@@ -17,8 +16,6 @@ services:
             context: ./backend
             dockerfile: Dockerfile
         container_name: ferron-proxy-manager-backend
-        ports:
-            - "8000:8000"
         volumes:
             - ferron-data:/app/data
             - "./ferron.kdl:/etc/ferron.kdl"
@@ -45,8 +42,7 @@ services:
             - "3000:3000"
         environment:
             - PUBLIC_AUTH_SIGNUP_DISABLED=${PUBLIC_AUTH_SIGNUP_DISABLED:-false} # keep its value same as AUTH_SIGNUP_DISABLED in backend service
-            - BACKEND_URL=${BACKEND_URL:-http://localhost:8000}
-            - PUBLIC_BACKEND_URL=${PUBLIC_BACKEND_URL:-http://localhost:8000}
+            - BACKEND_URL=${BACKEND_URL:-http://backend:8000}
         restart: always
         depends_on:
             - backend
