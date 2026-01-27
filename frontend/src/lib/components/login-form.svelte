@@ -13,6 +13,7 @@
     import { goto } from '$app/navigation';
     import { ApiPaths } from '$lib/api/types';
     import type { components } from '$lib/api/types';
+    import { handleFormSubmit, type FieldErrors } from '$lib/formUtils';
 
     type LoginBody = components['schemas']['Body_login_api_auth_login_post'];
 
@@ -23,75 +24,51 @@
     let isSubmitting = $state(false);
 
     let formError = $state('');
-    let fieldErrors = $state<Record<string, string>>({});
+    let fieldErrors = $state<FieldErrors>({});
 
     async function handleSubmit(event: Event) {
         event.preventDefault();
 
         formError = '';
         fieldErrors = {};
-
         isSubmitting = true;
 
-        try {
-            const requestBody: LoginBody = {
-                grant_type: 'password',
-                username,
-                password,
-                scope: '',
-                client_id: '',
-                client_secret: ''
-            };
+        const requestBody: LoginBody = {
+            grant_type: 'password',
+            username,
+            password,
+            scope: '',
+            client_id: '',
+            client_secret: ''
+        };
 
-            const { data, error, response } = await client.POST(
-                ApiPaths.login_api_auth_login_post,
-                {
-                    body: requestBody,
-                    // this converts the typescript object to x-www-form-urlencoded format
-                    bodySerializer(body) {
-                        const formData = new URLSearchParams();
-                        for (const [key, value] of Object.entries(body)) {
-                            if (value !== null && value !== undefined) {
-                                formData.append(key, String(value));
-                            }
+        const result = await handleFormSubmit(() =>
+            client.POST(ApiPaths.login_api_auth_login_post, {
+                body: requestBody,
+                // this converts the typescript object to x-www-form-urlencoded format
+                bodySerializer(body) {
+                    const formData = new URLSearchParams();
+                    for (const [key, value] of Object.entries(body)) {
+                        if (value !== null && value !== undefined) {
+                            formData.append(key, String(value));
                         }
-                        return formData;
-                    },
-                    // TODO: find a way to set this header using the information given in src/lib/api/types.ts
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
                     }
+                    return formData;
+                },
+                // TODO: find a way to set this header using the information given in src/lib/api/types.ts
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
                 }
-            );
+            })
+        );
 
-            if (response.status === 200 && data) {
-                await goto('/dashboard');
-            } else if (response.status === 422 && error) {
-                const validationError = error as {
-                    detail?: Array<{ loc: (string | number)[]; msg: string }>;
-                };
-                if (validationError.detail) {
-                    validationError.detail.forEach((err) => {
-                        const fieldName = err.loc[err.loc.length - 1];
-                        if (typeof fieldName === 'string') {
-                            fieldErrors[fieldName] = err.msg;
-                        }
-                    });
-                }
-            } else if (error) {
-                const apiError = error as { detail?: { error_code?: string; msg?: string } };
-                if (apiError.detail?.msg) {
-                    formError = apiError.detail.msg;
-                } else {
-                    formError = 'An error occurred. Please try again.';
-                }
-            } else {
-                formError = 'An unexpected error occurred. Please try again.';
-            }
-        } catch (err) {
-            formError = 'Network error. Please check your connection and try again.';
-        } finally {
-            isSubmitting = false;
+        isSubmitting = false;
+
+        if (result.success) {
+            await goto('/dashboard');
+        } else {
+            formError = result.formError ?? '';
+            fieldErrors = result.fieldErrors ?? {};
         }
     }
 </script>

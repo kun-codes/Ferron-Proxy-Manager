@@ -11,6 +11,7 @@
     import client from '$lib/apiClient';
     import { toast } from 'svelte-sonner';
     import { onMount } from 'svelte';
+    import { handleFormSubmit, type FieldErrors } from '$lib/formUtils';
 
     type GlobalTemplateConfig = components['schemas']['GlobalTemplateConfig'];
 
@@ -32,7 +33,7 @@
     let isSubmitting = $state(false);
     let isLoading = $state(true);
     let formError = $state('');
-    let fieldErrors = $state<Record<string, string>>({});
+    let fieldErrors = $state<FieldErrors>({});
 
     onMount(async () => {
         await loadGlobalConfig();
@@ -42,28 +43,17 @@
         isLoading = true;
         formError = '';
 
-        try {
-            const { data, error, response } = await client.GET(
-                ApiPaths.read_global_config_api_configs_global_get
-            );
+        const result = await handleFormSubmit(() =>
+            client.GET(ApiPaths.read_global_config_api_configs_global_get)
+        );
 
-            if (response.status === 200 && data) {
-                formData = { ...data };
-                originalData = { ...data };
-            } else if (error) {
-                const apiError = error as { detail?: { error_code?: string; msg?: string } };
-                if (apiError.detail?.msg) {
-                    formError = apiError.detail.msg;
-                } else {
-                    formError = 'Failed to load global configuration.';
-                }
-            } else {
-                formError = 'An unexpected error occurred while loading configuration.';
-            }
-        } catch (err) {
-            formError = 'Network error. Please check your connection and try again.';
-        } finally {
-            isLoading = false;
+        isLoading = false;
+
+        if (result.success && result.data) {
+            formData = { ...result.data };
+            originalData = { ...result.data };
+        } else {
+            formError = result.formError ?? 'Failed to load global configuration.';
         }
     }
 
@@ -78,47 +68,23 @@
 
         formError = '';
         fieldErrors = {};
-
         isSubmitting = true;
 
-        try {
-            const { data, error, response } = await client.PATCH(
-                ApiPaths.update_global_config_api_configs_global_patch,
-                {
-                    body: formData
-                }
-            );
+        const result = await handleFormSubmit(() =>
+            client.PATCH(ApiPaths.update_global_config_api_configs_global_patch, {
+                body: formData
+            })
+        );
 
-            if (response.status === 200 && data) {
-                toast.success('Global configuration updated successfully!');
-                formData = { ...data };
-                originalData = { ...data };
-            } else if (response.status === 422 && error) {
-                const validationError = error as {
-                    detail?: Array<{ loc: (string | number)[]; msg: string }>;
-                };
-                if (validationError.detail) {
-                    validationError.detail.forEach((err) => {
-                        const fieldName = err.loc[err.loc.length - 1];
-                        if (typeof fieldName === 'string') {
-                            fieldErrors[fieldName] = err.msg;
-                        }
-                    });
-                }
-            } else if (error) {
-                const apiError = error as { detail?: { error_code?: string; msg?: string } };
-                if (apiError.detail?.msg) {
-                    formError = apiError.detail.msg;
-                } else {
-                    formError = 'An error occurred. Please try again.';
-                }
-            } else {
-                formError = 'An unexpected error occurred. Please try again.';
-            }
-        } catch (err) {
-            formError = 'Network error. Please check your connection and try again.';
-        } finally {
-            isSubmitting = false;
+        isSubmitting = false;
+
+        if (result.success && result.data) {
+            toast.success('Global configuration updated successfully!');
+            formData = { ...result.data };
+            originalData = { ...result.data };
+        } else {
+            formError = result.formError ?? '';
+            fieldErrors = result.fieldErrors ?? {};
         }
     }
 </script>
