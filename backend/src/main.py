@@ -58,7 +58,7 @@ origins = ["http://localhost:5173", "http://localhost:3000"]
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
-    debug=settings.debug,
+    debug=not settings.production,
     lifespan=lifespan,
 )
 app.state.limiter = rate_limiter
