@@ -22,7 +22,7 @@ services:
             - "ferron-sub-configs:/etc/ferron-proxy-manager/"
             - "/var/run/docker.sock:/var/run/docker.sock:ro"
         environment:
-            - DEBUG=${DEBUG:-false}
+            - PRODUCTION=${PRODUCTION:-true}
             - DATABASE_URL=${DATABASE_URL:-sqlite+aiosqlite:///./data/ferron.db}
             - DATABASE_ECHO=${DATABASE_ECHO:-false}
             - AUTH_SECRET_KEY=${AUTH_SECRET_KEY:?AUTH_SECRET_KEY is required in production}

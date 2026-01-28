@@ -58,8 +58,12 @@ origins = ["http://localhost:5173", "http://localhost:3000"]
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
-    debug=settings.debug,
+    debug=not settings.production,
     lifespan=lifespan,
+    # all urls useful in dev setup
+    docs_url=None if settings.production else "/docs",
+    redoc_url=None if settings.production else "/redoc",
+    openapi_url=None if settings.production else "/openapi.json",
 )
 app.state.limiter = rate_limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
