@@ -243,23 +243,25 @@
 
             <Field.Group>
                 <Field.Field>
-                    <Button type="submit" disabled={isSubmitting}>
-                        {isSubmitting
-                            ? isEditMode
-                                ? 'Saving...'
-                                : 'Creating...'
-                            : isEditMode
-                              ? 'Save Changes'
-                              : 'Create Static File Server'}
-                    </Button>
-                    <Field.Description class="px-6 text-center">
+                    <div class="flex justify-end gap-4">
                         <Button
                             type="button"
                             variant="outline"
                             onclick={cancel}
-                            disabled={isSubmitting}>Cancel</Button
+                            disabled={isSubmitting}
                         >
-                    </Field.Description>
+                            Cancel
+                        </Button>
+                        <Button type="submit" disabled={isSubmitting}>
+                            {isSubmitting
+                                ? isEditMode
+                                    ? 'Saving...'
+                                    : 'Creating...'
+                                : isEditMode
+                                  ? 'Save Changes'
+                                  : 'Create Static File Server'}
+                        </Button>
+                    </div>
                 </Field.Field>
             </Field.Group>
         </form>
