@@ -246,10 +246,7 @@
 
                 <Field.Group>
                     <Field.Field>
-                        <div class="flex gap-4">
-                            <Button type="submit" disabled={isSubmitting}>
-                                {isSubmitting ? 'Saving...' : 'Save Changes'}
-                            </Button>
+                        <div class="flex justify-end gap-4">
                             <Button
                                 type="button"
                                 variant="outline"
@@ -257,6 +254,9 @@
                                 disabled={isSubmitting}
                             >
                                 Cancel
+                            </Button>
+                            <Button type="submit" disabled={isSubmitting}>
+                                {isSubmitting ? 'Saving...' : 'Save Changes'}
                             </Button>
                         </div>
                     </Field.Field>
