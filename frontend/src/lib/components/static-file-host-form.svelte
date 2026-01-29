@@ -10,6 +10,7 @@
     import { type ComponentProps, untrack } from 'svelte';
     import client from '$lib/apiClient';
     import { toast } from 'svelte-sonner';
+    import { handleFormSubmit, type FieldErrors } from '$lib/formUtils';
 
     type CreateStaticFileConfig = components['schemas']['CreateStaticFileConfig'];
     type UpdateStaticFileConfig = components['schemas']['UpdateStaticFileConfig'];
@@ -42,7 +43,7 @@
 
     let isSubmitting = $state(false);
     let formError = $state('');
-    let fieldErrors = $state<Record<string, string>>({});
+    let fieldErrors = $state<FieldErrors>({});
 
     const isEditMode = $derived('id' in formData && typeof formData.id === 'number');
 
@@ -74,43 +75,20 @@
 
         isSubmitting = true;
 
-        try {
-            const { data, error, response } = await client.POST(
-                ApiPaths.create_static_file_config_api_configs_static_file_post,
-                {
-                    body: formData as CreateStaticFileConfig
-                }
-            );
+        const result = await handleFormSubmit(() =>
+            client.POST(ApiPaths.create_static_file_config_api_configs_static_file_post, {
+                body: formData as CreateStaticFileConfig
+            })
+        );
 
-            if (response.status === 200 && data) {
-                toast.success('Static file server configuration created successfully!');
-                formData = { ...initialFormData };
-            } else if (response.status === 422 && error) {
-                const validationError = error as {
-                    detail?: Array<{ loc: (string | number)[]; msg: string }>;
-                };
-                if (validationError.detail) {
-                    validationError.detail.forEach((err) => {
-                        const fieldName = err.loc[err.loc.length - 1];
-                        if (typeof fieldName === 'string') {
-                            fieldErrors[fieldName] = err.msg;
-                        }
-                    });
-                }
-            } else if (error) {
-                const apiError = error as { detail?: { error_code?: string; msg?: string } };
-                if (apiError.detail?.msg) {
-                    formError = apiError.detail.msg;
-                } else {
-                    formError = 'An error occurred. Please try again.';
-                }
-            } else {
-                formError = 'An unexpected error occurred. Please try again.';
-            }
-        } catch (err) {
-            formError = 'Network error. Please check your connection and try again.';
-        } finally {
-            isSubmitting = false;
+        isSubmitting = false;
+
+        if (result.success) {
+            toast.success('Static file server configuration created successfully!');
+            formData = { ...initialFormData };
+        } else {
+            formError = result.formError ?? '';
+            fieldErrors = result.fieldErrors ?? {};
         }
     }
 </script>

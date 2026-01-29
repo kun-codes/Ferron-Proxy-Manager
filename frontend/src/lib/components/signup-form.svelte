@@ -8,6 +8,7 @@
     import { goto } from '$app/navigation';
     import { ApiPaths } from '$lib/api/types';
     import type { components } from '$lib/api/types';
+    import { handleFormSubmit, type FieldErrors } from '$lib/formUtils';
 
     type UserCreate = components['schemas']['UserCreate'];
 
@@ -20,7 +21,7 @@
     let isSubmitting = $state(false);
 
     let formError = $state('');
-    let fieldErrors = $state<Record<string, string>>({});
+    let fieldErrors = $state<FieldErrors>({});
 
     async function handleSubmit(event: Event) {
         event.preventDefault();
@@ -35,48 +36,27 @@
 
         isSubmitting = true;
 
-        try {
-            const requestBody: UserCreate = {
-                username,
-                email,
-                password
-            };
+        const requestBody: UserCreate = {
+            username,
+            email,
+            password
+        };
 
-            const { data, error, response } = await client.POST(
-                ApiPaths.signup_api_auth_signup_post,
-                {
+        const result = await handleFormSubmit(
+            () =>
+                client.POST(ApiPaths.signup_api_auth_signup_post, {
                     body: requestBody
-                }
-            );
+                }),
+            { successStatuses: [201] }
+        );
 
-            if (response.status === 201 && data) {
-                await goto('/login');
-            } else if (response.status === 422 && error) {
-                const validationError = error as {
-                    detail?: Array<{ loc: (string | number)[]; msg: string }>;
-                };
-                if (validationError.detail) {
-                    validationError.detail.forEach((err) => {
-                        const fieldName = err.loc[err.loc.length - 1];
-                        if (typeof fieldName === 'string') {
-                            fieldErrors[fieldName] = err.msg;
-                        }
-                    });
-                }
-            } else if (error) {
-                const apiError = error as { detail?: { error_code?: string; msg?: string } };
-                if (apiError.detail?.msg) {
-                    formError = apiError.detail.msg;
-                } else {
-                    formError = 'An error occurred. Please try again.';
-                }
-            } else {
-                formError = 'An unexpected error occurred. Please try again.';
-            }
-        } catch (err) {
-            formError = 'Network error. Please check your connection and try again.';
-        } finally {
-            isSubmitting = false;
+        isSubmitting = false;
+
+        if (result.success) {
+            await goto('/login');
+        } else {
+            formError = result.formError ?? '';
+            fieldErrors = result.fieldErrors ?? {};
         }
     }
 </script>
