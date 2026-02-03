@@ -34,7 +34,7 @@ class GlobalTemplateConfig(TemplateConfig):
     is_h1_protocol_enabled: bool = DEFAULT_IS_H1_PROTOCOL_ENABLED
     is_h2_protocol_enabled: bool = DEFAULT_IS_H2_PROTOCOL_ENABLED
     is_h3_protocol_enabled: bool = DEFAULT_IS_H3_PROTOCOL_ENABLED
-    timeout: int = DEFAULT_TIMEOUT
+    timeout: int = Field(default=DEFAULT_TIMEOUT, ge=0)
     cache_max_entries: int = DEFAULT_CACHE_MAX_ENTRIES
 
 
