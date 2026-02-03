@@ -66,7 +66,7 @@ class UpdateReverseProxyConfig(CreateReverseProxyConfig):
 class CreateLoadBalancerConfig(CommonReverseProxyConfig):
     backend_urls: list[str]
     lb_health_check: bool = DEFAULT_LB_HEALTH_CHECK
-    lb_health_check_max_fails: int = DEFAULT_LB_HEALTH_CHECK_MAX_FAILS
+    lb_health_check_max_fails: int = Field(default=DEFAULT_LB_HEALTH_CHECK_MAX_FAILS, ge=0)
     lb_health_check_window: int = DEFAULT_LB_HEALTH_CHECK_WINDOW
 
 
