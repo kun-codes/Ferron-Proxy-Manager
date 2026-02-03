@@ -203,6 +203,7 @@
                         placeholder="3600"
                         bind:value={formData.cache_max_age}
                         disabled={!formData.cache || isSubmitting}
+                        min="0"
                     />
                     {#if fieldErrors.cache_max_age}
                         <Field.Error>{fieldErrors.cache_max_age}</Field.Error>
@@ -254,6 +255,7 @@
                         placeholder="3"
                         bind:value={formData.lb_health_check_max_fails}
                         disabled={!formData.lb_health_check || isSubmitting}
+                        min="0"
                     />
                     {#if fieldErrors.lb_health_check_max_fails}
                         <Field.Error>{fieldErrors.lb_health_check_max_fails}</Field.Error>
@@ -274,6 +276,7 @@
                         placeholder="5000"
                         bind:value={formData.lb_health_check_window}
                         disabled={!formData.lb_health_check || isSubmitting}
+                        min="0"
                     />
                     {#if fieldErrors.lb_health_check_window}
                         <Field.Error>{fieldErrors.lb_health_check_window}</Field.Error>
