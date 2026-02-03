@@ -46,7 +46,7 @@ class BaseVirtualHost(TemplateConfig):
 
 class Cache(TemplateConfig):
     cache: bool = DEFAULT_CACHE_ENABLED
-    cache_max_age: int = DEFAULT_CACHE_MAX_AGE
+    cache_max_age: int = Field(default=DEFAULT_CACHE_MAX_AGE, ge=0)
 
 
 class CommonReverseProxyConfig(BaseVirtualHost, Cache):
