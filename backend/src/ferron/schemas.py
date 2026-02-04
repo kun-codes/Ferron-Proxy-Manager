@@ -1,4 +1,6 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pathlib import Path
+
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 from src.ferron.constants import (
     DEFAULT_CACHE_ENABLED,
@@ -56,7 +58,29 @@ class CommonReverseProxyConfig(BaseVirtualHost, Cache):
 class CreateReverseProxyConfig(CommonReverseProxyConfig):
     backend_url: str
     use_unix_socket: bool = DEFAULT_USE_UNIX_SOCKET
-    unix_socket_path: str | None = None
+    unix_socket_path: str = ""
+
+    @field_validator("unix_socket_path", mode="after")
+    @classmethod
+    def validate_unix_socket_path(cls, v: str, info: ValidationInfo) -> str:
+        use_unix_socket = info.data["use_unix_socket"]
+
+        if not use_unix_socket:
+            return ""
+
+        if use_unix_socket:
+            v = v.strip()
+            if not v:
+                raise ValueError("unix_socket_path must be provided when use_unix_socket is True")
+
+            path = Path(v)
+            if not path.is_absolute():
+                raise ValueError("unix_socket_path must be an absolute path")
+
+            # TODO: check if the provided path is a socket. Cannot check it right now because
+            # it requires access to the ferron container's filesystem.
+
+        return v
 
 
 class UpdateReverseProxyConfig(CreateReverseProxyConfig):
