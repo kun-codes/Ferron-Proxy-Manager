@@ -109,7 +109,7 @@ class ReverseProxyConfig(CommonReverseProxyConfig, SQLModel, table=True):
     )
     backend_url: str = Field(default=None)
     use_unix_socket: bool = Field(default=DEFAULT_USE_UNIX_SOCKET)
-    unix_socket_path: str = Field(default=None)
+    unix_socket_path: str = Field(default="")
 
     @property
     def virtual_host_name(self) -> Optional[str]:
