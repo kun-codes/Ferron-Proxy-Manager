@@ -105,6 +105,22 @@ class CreateStaticFileConfig(BaseVirtualHost, Cache):
     directory_listing: bool = DEFAULT_DIRECTORY_LISTING
     precompressed: bool = DEFAULT_PRECOMPRESSED
 
+    @field_validator("static_files_dir", mode="after")
+    @classmethod
+    def validate_static_files_dir(cls, v: str) -> str:
+        if not v:
+            raise ValueError("static_files_dir must be provided")
+
+        path = Path(v)
+        if not path.is_absolute():
+            raise ValueError("static_files_dir must be an absolute path")
+
+        # TODO: raise a ValueError if the path is not a directory
+        # Not doing it now because to determine if a path is a directory or not, I need access to the file system
+        # of the ferron container which is not possible right now
+
+        return v
+
 
 class UpdateStaticFileConfig(CreateStaticFileConfig):
     id: int
