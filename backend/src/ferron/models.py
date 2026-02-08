@@ -97,7 +97,7 @@ class StaticFileConfig(Cache, SQLModel, table=True):
         # lazy=selectin because https://stackoverflow.com/a/74256068
         sa_relationship_kwargs={"lazy": "selectin", "uselist": False},
     )
-    static_files_dir: str = Field(default=None)
+    static_files_dir: str
     use_spa: bool = Field(default=DEFAULT_USE_SPA)
     compressed: bool = Field(default=DEFAULT_COMPRESSED)
     directory_listing: bool = Field(default=DEFAULT_DIRECTORY_LISTING)
@@ -105,7 +105,7 @@ class StaticFileConfig(Cache, SQLModel, table=True):
 
     @property
     def virtual_host_name(self) -> Optional[str]:
-        return self.virtual_host.virtual_host_name if self.virtual_host else None
+        return self.virtual_host.virtual_host_name
 
 
 class CommonReverseProxyConfig(Cache):
@@ -125,13 +125,13 @@ class ReverseProxyConfig(CommonReverseProxyConfig, SQLModel, table=True):
         # lazy=selectin because https://stackoverflow.com/a/74256068
         sa_relationship_kwargs={"lazy": "selectin", "uselist": False},
     )
-    backend_url: HttpUrl = Field(default=None, sa_type=HttpUrlType)
+    backend_url: HttpUrl = Field(sa_type=HttpUrlType)
     use_unix_socket: bool = Field(default=DEFAULT_USE_UNIX_SOCKET)
     unix_socket_path: str = Field(default="")
 
     @property
     def virtual_host_name(self) -> Optional[str]:
-        return self.virtual_host.virtual_host_name if self.virtual_host else None
+        return self.virtual_host.virtual_host_name
 
 
 class LoadBalancerBackendURL(SQLModel, table=True):
@@ -150,7 +150,7 @@ class LoadBalancerBackendURL(SQLModel, table=True):
     used_in_load_balancer: int = Field(
         sa_column=Column(Integer, ForeignKey("ferron_load_balancer_config.id", ondelete="CASCADE"), nullable=False)
     )
-    backend_url: HttpUrl = Field(default=None, sa_type=HttpUrlType)
+    backend_url: HttpUrl = Field(sa_type=HttpUrlType)
 
     load_balancer_relationship: "LoadBalancerConfig" = Relationship(back_populates="backend_urls_relationship")
 
@@ -178,7 +178,7 @@ class LoadBalancerConfig(CommonReverseProxyConfig, SQLModel, table=True):
 
     @property
     def virtual_host_name(self) -> Optional[str]:
-        return self.virtual_host.virtual_host_name if self.virtual_host else None
+        return self.virtual_host.virtual_host_name
 
     @property
     def backend_urls(self) -> List[str]:
