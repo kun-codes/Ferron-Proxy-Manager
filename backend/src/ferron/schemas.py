@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, ValidationInfo, field_validator
 from pydantic_extra_types.domain import DomainStr
 
 from src.ferron.constants import (
@@ -57,7 +57,8 @@ class CommonReverseProxyConfig(BaseVirtualHost, Cache):
 
 
 class CreateReverseProxyConfig(CommonReverseProxyConfig):
-    backend_url: str
+    backend_url: HttpUrl  # this matches http and https urls. Ferron dev says that only http and https urls are accepted
+    # https://matrix.to/#/!onzsyGmfRYTdueZrQI:matrix.org/$EH3aAcinAQW7JD9lG-oPPJcEvMt9l66PKRp40zGWEBw
     use_unix_socket: bool = DEFAULT_USE_UNIX_SOCKET
     unix_socket_path: str = ""
 
@@ -89,7 +90,9 @@ class UpdateReverseProxyConfig(CreateReverseProxyConfig):
 
 
 class CreateLoadBalancerConfig(CommonReverseProxyConfig):
-    backend_urls: list[str]
+    backend_urls: list[HttpUrl]  # this matches http and https urls. Ferron dev says that only http and https urls are
+    # accepted
+    # https://matrix.to/#/!onzsyGmfRYTdueZrQI:matrix.org/$EH3aAcinAQW7JD9lG-oPPJcEvMt9l66PKRp40zGWEBw
     lb_health_check: bool = DEFAULT_LB_HEALTH_CHECK
     lb_health_check_max_fails: int = Field(default=DEFAULT_LB_HEALTH_CHECK_MAX_FAILS, ge=0)
     lb_health_check_window: int = Field(default=DEFAULT_LB_HEALTH_CHECK_WINDOW, ge=0)
