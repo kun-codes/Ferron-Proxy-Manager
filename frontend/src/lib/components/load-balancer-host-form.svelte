@@ -177,7 +177,9 @@
                         </Button>
                     </div>
                     {#if fieldErrors.backend_urls}
-                        <Field.Error>{fieldErrors.backend_urls}</Field.Error>
+                        <Field.Error class="whitespace-pre-line"
+                            >{fieldErrors.backend_urls}</Field.Error
+                        >
                     {:else}
                         <Field.Description>
                             The backend server URLs to distribute traffic across.
