@@ -1,6 +1,8 @@
-from typing import List, Optional
+from typing import Any, List, Optional
 
-from sqlalchemy import Column, ForeignKey, Integer
+from pydantic import HttpUrl
+from sqlalchemy import Column, ForeignKey, Integer, String, TypeDecorator
+from sqlalchemy.engine import Dialect
 from sqlmodel import Field, Relationship, SQLModel
 
 from src.ferron.constants import (
@@ -23,6 +25,22 @@ from src.ferron.constants import (
     DEFAULT_USE_SPA,
     DEFAULT_USE_UNIX_SOCKET,
 )
+
+
+# from: https://github.com/fastapi/sqlmodel/discussions/956#discussioncomment-10084150
+class HttpUrlType(TypeDecorator):
+    impl = String(2083)  # max length is from https://docs.pydantic.dev/latest/api/networks/#pydantic.networks.HttpUrl
+    cache_ok = True
+    python_type = HttpUrl
+
+    def process_bind_param(self, value: Optional[HttpUrl], dialect: Dialect) -> str:
+        return str(value)
+
+    def process_result_value(self, value: Optional[Any], dialect: Dialect) -> HttpUrl:  # noqa: ANN401
+        return HttpUrl(url=value)
+
+    def process_literal_param(self, value: Optional[HttpUrl], dialect: Dialect) -> str:
+        return str(value)
 
 
 # TODO: limit this table to only 1 row
@@ -79,7 +97,7 @@ class StaticFileConfig(Cache, SQLModel, table=True):
         # lazy=selectin because https://stackoverflow.com/a/74256068
         sa_relationship_kwargs={"lazy": "selectin", "uselist": False},
     )
-    static_files_dir: str = Field(default=None)
+    static_files_dir: str
     use_spa: bool = Field(default=DEFAULT_USE_SPA)
     compressed: bool = Field(default=DEFAULT_COMPRESSED)
     directory_listing: bool = Field(default=DEFAULT_DIRECTORY_LISTING)
@@ -87,7 +105,7 @@ class StaticFileConfig(Cache, SQLModel, table=True):
 
     @property
     def virtual_host_name(self) -> Optional[str]:
-        return self.virtual_host.virtual_host_name if self.virtual_host else None
+        return self.virtual_host.virtual_host_name
 
 
 class CommonReverseProxyConfig(Cache):
@@ -107,13 +125,13 @@ class ReverseProxyConfig(CommonReverseProxyConfig, SQLModel, table=True):
         # lazy=selectin because https://stackoverflow.com/a/74256068
         sa_relationship_kwargs={"lazy": "selectin", "uselist": False},
     )
-    backend_url: str = Field(default=None)
+    backend_url: HttpUrl = Field(sa_type=HttpUrlType)
     use_unix_socket: bool = Field(default=DEFAULT_USE_UNIX_SOCKET)
-    unix_socket_path: str = Field(default=None)
+    unix_socket_path: str = Field(default="")
 
     @property
     def virtual_host_name(self) -> Optional[str]:
-        return self.virtual_host.virtual_host_name if self.virtual_host else None
+        return self.virtual_host.virtual_host_name
 
 
 class LoadBalancerBackendURL(SQLModel, table=True):
@@ -132,7 +150,7 @@ class LoadBalancerBackendURL(SQLModel, table=True):
     used_in_load_balancer: int = Field(
         sa_column=Column(Integer, ForeignKey("ferron_load_balancer_config.id", ondelete="CASCADE"), nullable=False)
     )
-    backend_url: str = Field(default=None)
+    backend_url: HttpUrl = Field(sa_type=HttpUrlType)
 
     load_balancer_relationship: "LoadBalancerConfig" = Relationship(back_populates="backend_urls_relationship")
 
@@ -160,7 +178,7 @@ class LoadBalancerConfig(CommonReverseProxyConfig, SQLModel, table=True):
 
     @property
     def virtual_host_name(self) -> Optional[str]:
-        return self.virtual_host.virtual_host_name if self.virtual_host else None
+        return self.virtual_host.virtual_host_name
 
     @property
     def backend_urls(self) -> List[str]:

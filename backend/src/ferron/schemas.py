@@ -1,4 +1,7 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pathlib import Path
+
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, ValidationInfo, field_validator
+from pydantic_extra_types.domain import DomainStr
 
 from src.ferron.constants import (
     DEFAULT_CACHE_ENABLED,
@@ -34,19 +37,19 @@ class GlobalTemplateConfig(TemplateConfig):
     is_h1_protocol_enabled: bool = DEFAULT_IS_H1_PROTOCOL_ENABLED
     is_h2_protocol_enabled: bool = DEFAULT_IS_H2_PROTOCOL_ENABLED
     is_h3_protocol_enabled: bool = DEFAULT_IS_H3_PROTOCOL_ENABLED
-    timeout: int = DEFAULT_TIMEOUT
+    timeout: int = Field(default=DEFAULT_TIMEOUT, ge=0)
     cache_max_entries: int = DEFAULT_CACHE_MAX_ENTRIES
 
 
 class BaseVirtualHost(TemplateConfig):
     model_config = ConfigDict(from_attributes=True)
 
-    virtual_host_name: str
+    virtual_host_name: DomainStr  # TODO: add support for wildcard domains
 
 
 class Cache(TemplateConfig):
     cache: bool = DEFAULT_CACHE_ENABLED
-    cache_max_age: int = DEFAULT_CACHE_MAX_AGE
+    cache_max_age: int = Field(default=DEFAULT_CACHE_MAX_AGE, ge=0)
 
 
 class CommonReverseProxyConfig(BaseVirtualHost, Cache):
@@ -54,9 +57,32 @@ class CommonReverseProxyConfig(BaseVirtualHost, Cache):
 
 
 class CreateReverseProxyConfig(CommonReverseProxyConfig):
-    backend_url: str
+    backend_url: HttpUrl  # this matches http and https urls. Ferron dev says that only http and https urls are accepted
+    # https://matrix.to/#/!onzsyGmfRYTdueZrQI:matrix.org/$EH3aAcinAQW7JD9lG-oPPJcEvMt9l66PKRp40zGWEBw
     use_unix_socket: bool = DEFAULT_USE_UNIX_SOCKET
-    unix_socket_path: str | None = None
+    unix_socket_path: str = ""
+
+    @field_validator("unix_socket_path", mode="after")
+    @classmethod
+    def validate_unix_socket_path(cls, v: str, info: ValidationInfo) -> str:
+        use_unix_socket = info.data["use_unix_socket"]
+
+        if not use_unix_socket:
+            return ""
+
+        if use_unix_socket:
+            v = v.strip()
+            if not v:
+                raise ValueError("unix_socket_path must be provided when use_unix_socket is True")
+
+            path = Path(v)
+            if not path.is_absolute():
+                raise ValueError("unix_socket_path must be an absolute path")
+
+            # TODO: check if the provided path is a socket. Cannot check it right now because
+            # it requires access to the ferron container's filesystem.
+
+        return v
 
 
 class UpdateReverseProxyConfig(CreateReverseProxyConfig):
@@ -64,10 +90,12 @@ class UpdateReverseProxyConfig(CreateReverseProxyConfig):
 
 
 class CreateLoadBalancerConfig(CommonReverseProxyConfig):
-    backend_urls: list[str]
+    backend_urls: list[HttpUrl]  # this matches http and https urls. Ferron dev says that only http and https urls are
+    # accepted
+    # https://matrix.to/#/!onzsyGmfRYTdueZrQI:matrix.org/$EH3aAcinAQW7JD9lG-oPPJcEvMt9l66PKRp40zGWEBw
     lb_health_check: bool = DEFAULT_LB_HEALTH_CHECK
-    lb_health_check_max_fails: int = DEFAULT_LB_HEALTH_CHECK_MAX_FAILS
-    lb_health_check_window: int = DEFAULT_LB_HEALTH_CHECK_WINDOW
+    lb_health_check_max_fails: int = Field(default=DEFAULT_LB_HEALTH_CHECK_MAX_FAILS, ge=0)
+    lb_health_check_window: int = Field(default=DEFAULT_LB_HEALTH_CHECK_WINDOW, ge=0)
 
 
 class UpdateLoadBalancerConfig(CreateLoadBalancerConfig):
@@ -80,6 +108,22 @@ class CreateStaticFileConfig(BaseVirtualHost, Cache):
     compressed: bool = DEFAULT_COMPRESSED
     directory_listing: bool = DEFAULT_DIRECTORY_LISTING
     precompressed: bool = DEFAULT_PRECOMPRESSED
+
+    @field_validator("static_files_dir", mode="after")
+    @classmethod
+    def validate_static_files_dir(cls, v: str) -> str:
+        if not v:
+            raise ValueError("static_files_dir must be provided")
+
+        path = Path(v)
+        if not path.is_absolute():
+            raise ValueError("static_files_dir must be an absolute path")
+
+        # TODO: raise a ValueError if the path is not a directory
+        # Not doing it now because to determine if a path is a directory or not, I need access to the file system
+        # of the ferron container which is not possible right now
+
+        return v
 
 
 class UpdateStaticFileConfig(CreateStaticFileConfig):

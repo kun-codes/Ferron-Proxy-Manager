@@ -23,9 +23,26 @@ export function parseValidationErrors(error: unknown): FieldErrors {
 
     if (validationError.detail && Array.isArray(validationError.detail)) {
         validationError.detail.forEach((err) => {
-            const fieldName = err.loc[err.loc.length - 1];
-            if (typeof fieldName === 'string') {
-                fieldErrors[fieldName] = err.msg;
+            const locPath = err.loc.filter((item) => item !== 'body');
+
+            if (locPath.length === 0) return;
+
+            let fieldName: string;
+            let errorMessage: string;
+
+            if (locPath.length > 1 && typeof locPath[locPath.length - 1] === 'number') {
+                fieldName = String(locPath[0]);
+                const index = locPath[locPath.length - 1] as number;
+                errorMessage = `Item ${index + 1}: ${err.msg}`;
+            } else {
+                fieldName = locPath.join('.');
+                errorMessage = err.msg;
+            }
+
+            if (fieldErrors[fieldName]) {
+                fieldErrors[fieldName] += '\n' + errorMessage;
+            } else {
+                fieldErrors[fieldName] = errorMessage;
             }
         });
     }

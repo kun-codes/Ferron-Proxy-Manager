@@ -166,6 +166,7 @@
                         placeholder="3600"
                         bind:value={formData.cache_max_age}
                         disabled={!formData.cache || isSubmitting}
+                        min="0"
                     />
                     {#if fieldErrors.cache_max_age}
                         <Field.Error>{fieldErrors.cache_max_age}</Field.Error>
