@@ -2,9 +2,7 @@ services:
     ferron:
         image: ferronserver/ferron:2
         container_name: ferron
-        ports:
-            - "80:80"
-            - "443:443"
+        network_mode: host
         volumes:
             - "ferron-acme:/var/cache/ferron-acme" # for persistent automatic TLS cache
             - "./backend/ferron.kdl:/etc/ferron.kdl"
