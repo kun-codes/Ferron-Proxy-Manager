@@ -12,9 +12,7 @@ services:
         restart: always
 
     backend:
-        build:
-            context: ./backend
-            dockerfile: Dockerfile
+        image: kuncodes/ferron-proxy-manager-backend:latest
         container_name: ferron-proxy-manager-backend
         volumes:
             - ferron-data:/app/data
@@ -34,9 +32,7 @@ services:
             - ferron
 
     frontend:
-        build:
-            context: ./frontend
-            dockerfile: Dockerfile
+        image: kuncodes/ferron-proxy-manager-frontend:latest
         container_name: ferron-proxy-manager-frontend
         ports:
             - "3000:3000"
