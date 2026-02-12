@@ -63,7 +63,7 @@
 
 <Card.Root {...restProps}>
     <Card.Header>
-        <Card.Title>Create an account</Card.Title>
+        <Card.Title class="text-2xl">Signup</Card.Title>
         <Card.Description>Enter your information below to create your account</Card.Description>
     </Card.Header>
     <Card.Content>
