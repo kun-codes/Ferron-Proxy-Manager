@@ -188,20 +188,22 @@
             header: 'Type',
             cell: ({ row }) => {
                 const type = row.original.type;
-                let badgeClass = 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+                let badgeClass =
+                    'bg-gray-50 text-gray-800 border border-gray-200 dark:bg-gray-900/40 dark:text-gray-300 dark:border-gray-500/40';
                 if (type === HostType.ReverseProxy)
-                    badgeClass = 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
+                    badgeClass =
+                        'bg-blue-50 text-blue-800 border border-blue-200 dark:bg-blue-900/60 dark:text-blue-200 dark:border-blue-400/60';
                 if (type === HostType.LoadBalancer)
                     badgeClass =
-                        'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300';
+                        'bg-purple-50 text-purple-800 border border-purple-200 dark:bg-purple-900/60 dark:text-purple-200 dark:border-purple-400/60';
                 if (type === HostType.StaticSite)
                     badgeClass =
-                        'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
+                        'bg-green-50 text-green-800 border border-green-200 dark:bg-green-900/60 dark:text-green-200 dark:border-green-400/60';
 
                 return renderSnippet(
                     createRawSnippet(() => ({
                         render: () =>
-                            `<span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${badgeClass}">${type}</span>`
+                            `<span class="inline-flex items-center rounded-md px-2.5 py-0.5 text-xs font-medium ${badgeClass}">${type}</span>`
                     }))
                 );
             },
