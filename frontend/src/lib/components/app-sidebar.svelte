@@ -22,15 +22,15 @@
                 ]
             },
             {
-                title: 'Hosts',
+                title: 'Virtual Hosts',
                 url: '#',
                 items: [
                     {
-                        title: 'Create Host',
+                        title: 'Create Virtual Host',
                         url: '/dashboard/hosts/create'
                     },
                     {
-                        title: 'Manage Hosts',
+                        title: 'Manage Virtual Hosts',
                         url: '/dashboard/hosts/manage'
                     }
                 ]
