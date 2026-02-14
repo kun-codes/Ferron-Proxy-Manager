@@ -50,12 +50,3 @@ Note: Make sure to turn off new users signups once you have created the required
 ## License
 
 The project is open source and is available under the [AGPL-3.0 License](./LICENSE).
-
-
-
-
-
-
-
-
-
