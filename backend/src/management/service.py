@@ -16,7 +16,7 @@ def get_current_version() -> schemas.VersionResponse:
     return schemas.VersionResponse(version=version)
 
 
-async def get_latest_version_from_github() -> schemas.LatestVersionResponse:
+async def get_latest_version() -> schemas.LatestVersionResponse:
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(
@@ -48,7 +48,7 @@ async def get_latest_version_from_github() -> schemas.LatestVersionResponse:
 
 async def check_update_available() -> schemas.UpdateAvailableResponse:
     current_version_response = get_current_version()
-    latest_version_response = await get_latest_version_from_github()
+    latest_version_response = await get_latest_version()
 
     update_available = latest_version_response.version > current_version_response.version
 

@@ -37,7 +37,7 @@ async def get_current_version() -> schemas.VersionResponse:
     ),
 )
 async def get_latest_version() -> schemas.LatestVersionResponse:
-    return await service.get_latest_version_from_github()
+    return await service.get_latest_version()
 
 
 @version_router.get(
