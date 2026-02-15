@@ -18,6 +18,7 @@ from src.database import engine, run_migrations
 from src.exceptions import RateLimitExceededCustomException
 from src.ferron.constants import ConfigFileLocation
 from src.ferron.router import router as config_router
+from src.management.router import router as management_router
 from src.service import create_ferron_global_config, rate_limiter
 
 
@@ -85,4 +86,5 @@ async def rate_limit_handler(_request: Request, _exc: RateLimitExceeded) -> JSON
 api_router = APIRouter(prefix="/api")
 api_router.include_router(auth_router)
 api_router.include_router(config_router)
+api_router.include_router(management_router)
 app.include_router(api_router)
