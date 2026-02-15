@@ -73,4 +73,5 @@ async def check_update_available() -> schemas.UpdateAvailableResponse:
         update_available=update_available,
         current_version=current_version_response.version,
         latest_version=latest_version_response.version,
+        release_url=latest_version_response.release_url,
     )

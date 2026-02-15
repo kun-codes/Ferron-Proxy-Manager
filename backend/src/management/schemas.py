@@ -16,3 +16,4 @@ class UpdateAvailableResponse(BaseModel):
     update_available: bool
     current_version: SemanticVersion
     latest_version: SemanticVersion
+    release_url: str | None = None
