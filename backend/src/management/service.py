@@ -6,7 +6,7 @@ from semver import Version
 from src.config import settings
 from src.management import schemas
 from src.management.constants import GITHUB_API_URL, VERSION_CACHE_DURATION_MINUTES
-from src.management.exceptions import GitHubAPIException, VersionParseException
+from src.management.exceptions import GitHubAPIException, GitHubAPIMalformedResponseException, VersionParseException
 
 _latest_version_cache: tuple[datetime, schemas.LatestVersionResponse] | None = None
 
@@ -45,8 +45,13 @@ async def get_latest_version() -> schemas.LatestVersionResponse:
     except httpx.RequestError as e:
         raise GitHubAPIException(f"Failed to connect to GitHub API: {e}") from e
 
-    tag_name = data.get("tag_name", "")
+    tag_name = data.get("tag_name")
     release_url = data.get("html_url")  # returns github.com link of the latest release
+
+    if not tag_name:
+        raise GitHubAPIMalformedResponseException("GitHub API response missing 'tag_name' field")
+    if not release_url:
+        raise GitHubAPIMalformedResponseException("GitHub API response missing 'html_url' field")
 
     # remove 'v' prefix if present (e.g., "v1.0.0" -> "1.0.0")
     version_str = tag_name.lstrip("v")

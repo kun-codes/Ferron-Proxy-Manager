@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends
 from src.auth.dependencies import get_current_user
 from src.exceptions import InvalidTokenException
 from src.management import schemas, service
-from src.management.exceptions import GitHubAPIException, VersionParseException
+from src.management.exceptions import GitHubAPIException, GitHubAPIMalformedResponseException, VersionParseException
 from src.utils import generate_error_response, merge_responses
 
 router = APIRouter(
@@ -33,6 +33,7 @@ async def get_current_version() -> schemas.VersionResponse:
     response_model=schemas.LatestVersionResponse,
     responses=merge_responses(
         generate_error_response(GitHubAPIException),
+        generate_error_response(GitHubAPIMalformedResponseException),
         generate_error_response(VersionParseException),
     ),
 )
@@ -45,6 +46,7 @@ async def get_latest_version() -> schemas.LatestVersionResponse:
     response_model=schemas.UpdateAvailableResponse,
     responses=merge_responses(
         generate_error_response(GitHubAPIException),
+        generate_error_response(GitHubAPIMalformedResponseException),
         generate_error_response(VersionParseException),
     ),
 )
