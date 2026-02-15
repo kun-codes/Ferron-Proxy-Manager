@@ -1,10 +1,14 @@
+from datetime import datetime, timedelta, timezone
+
 import httpx
 from semver import Version
 
 from src.config import settings
 from src.management import schemas
-from src.management.constants import GITHUB_API_URL
+from src.management.constants import GITHUB_API_URL, VERSION_CACHE_DURATION_MINUTES
 from src.management.exceptions import GitHubAPIException, VersionParseException
+
+_latest_version_cache: tuple[datetime, schemas.LatestVersionResponse] | None = None
 
 
 def get_current_version() -> schemas.VersionResponse:
@@ -17,6 +21,15 @@ def get_current_version() -> schemas.VersionResponse:
 
 
 async def get_latest_version() -> schemas.LatestVersionResponse:
+    global _latest_version_cache
+
+    if _latest_version_cache is not None:
+        cached_time, cached_response = _latest_version_cache
+        cache_age = datetime.now(timezone.utc) - cached_time
+        if cache_age < timedelta(minutes=VERSION_CACHE_DURATION_MINUTES):
+            return cached_response
+
+    # is only run when cache is stale or doesn't exist
     try:
         async with httpx.AsyncClient() as client:
             response = await client.get(
@@ -43,7 +56,11 @@ async def get_latest_version() -> schemas.LatestVersionResponse:
     except ValueError as e:
         raise VersionParseException(f"Failed to parse GitHub release version '{tag_name}': {e}") from e
 
-    return schemas.LatestVersionResponse(version=version, release_url=release_url)
+    latest_version_response = schemas.LatestVersionResponse(version=version, release_url=release_url)
+
+    _latest_version_cache = (datetime.now(timezone.utc), latest_version_response)
+
+    return latest_version_response
 
 
 async def check_update_available() -> schemas.UpdateAvailableResponse:
