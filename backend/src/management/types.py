@@ -8,7 +8,7 @@ from semver import Version
 
 class _VersionPydanticAnnotation:
     """
-    Adapter from: https://python-semver.readthedocs.io/en/latest/advanced/combine-pydantic-and-semver.html
+    Adapted from: https://python-semver.readthedocs.io/en/latest/advanced/combine-pydantic-and-semver.html
     """
 
     @classmethod
