@@ -41,6 +41,7 @@
 
 <script lang="ts">
     import * as Sidebar from '$lib/components/ui/sidebar/index.js';
+    import UpdateNotification from './update-notification.svelte';
     import type { ComponentProps } from 'svelte';
     import { page } from '$app/state';
 
@@ -71,5 +72,8 @@
             </Sidebar.Group>
         {/each}
     </Sidebar.Content>
+    <Sidebar.Footer>
+        <UpdateNotification />
+    </Sidebar.Footer>
     <Sidebar.Rail />
 </Sidebar.Root>
