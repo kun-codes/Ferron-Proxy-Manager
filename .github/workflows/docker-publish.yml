@@ -114,7 +114,7 @@ jobs:
                     -e AUTH_REFRESH_SECRET_KEY=ci-refresh-secret-key \
                     -e AUTH_SIGNUP_DISABLED=false \
                     -e PUBLIC_AUTH_SIGNUP_DISABLED=false \
-                    -e BACKEND_URL=http://backend:8000
+                    -e BACKEND_URL=http://backend:8000 \
                     ferron-backend-dev
 
             - name: Wait for backend OpenAPI endpoint
