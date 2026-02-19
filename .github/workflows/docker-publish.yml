@@ -4,6 +4,8 @@ on:
     push:
         tags:
             - "v*"
+        branches:
+            - "feat/workflows-add-publish-workflow" # TODO: remove it before merge
 
 jobs:
     publish-backend:
