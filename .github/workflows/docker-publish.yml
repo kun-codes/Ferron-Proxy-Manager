@@ -102,6 +102,11 @@ jobs:
             - name: Build backend dev image for OpenAPI generation
               run: docker build -t ferron-backend-dev -f ./backend/Dockerfile.dev ./backend
 
+            - name: Create `ferron.kdl` config file
+              run: |
+                  echo 'include "/etc/ferron-proxy-manager/main.kdl"' > ./backend/ferron.kdl
+                  chmod 644 ./backend/ferron.kdl
+
             - name: Start backend dev container
               run: |
                   docker run -d --name ferron-backend-dev \
