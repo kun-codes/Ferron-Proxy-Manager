@@ -99,28 +99,25 @@ jobs:
               with:
                   version: 10
 
-            - name: Build backend dev image for OpenAPI generation
-              run: docker build -t ferron-backend-dev -f ./backend/Dockerfile.dev ./backend
-
             - name: Create `ferron.kdl` config file
               run: |
                   echo 'include "/etc/ferron-proxy-manager/main.kdl"' > ./backend/ferron.kdl
                   chmod 644 ./backend/ferron.kdl
 
-            - name: Start backend dev container
+            - name: Create backend .env file
               run: |
-                  docker run -d --name ferron-backend-dev \
-                    -p 8000:8000 \
-                    -e PRODUCTION=false \
-                    -e DATABASE_URL=sqlite+aiosqlite:///./data/ferron.db \
-                    -e DATABASE_ECHO=false \
-                    -e FERRON_CONTAINER_NAME=ferron \
-                    -e AUTH_SECRET_KEY=ci-secret-key \
-                    -e AUTH_REFRESH_SECRET_KEY=ci-refresh-secret-key \
-                    -e AUTH_SIGNUP_DISABLED=false \
-                    -e PUBLIC_AUTH_SIGNUP_DISABLED=false \
-                    -e BACKEND_URL=http://backend:8000 \
-                    ferron-backend-dev
+                  cat > ./backend/.env << EOF
+                  PRODUCTION=false
+                  DATABASE_URL=sqlite+aiosqlite:///./data/ferron.db
+                  DATABASE_ECHO=false
+                  FERRON_CONTAINER_NAME=ferron
+                  AUTH_SECRET_KEY=ci-secret-key
+                  AUTH_REFRESH_SECRET_KEY=ci-refresh-secret-key
+                  AUTH_SIGNUP_DISABLED=false
+                  EOF
+
+            - name: Start backend dev container
+              run: docker compose -f docker-compose.dev.yml up -d --build backend
 
             - name: Wait for backend OpenAPI endpoint
               run: |
@@ -162,7 +159,7 @@ jobs:
 
             - name: Stop backend dev container
               if: always()
-              run: docker rm -f ferron-backend-dev || true
+              run: docker compose -f docker-compose.dev.yml down || true
 
     publish-frontend-manifest:
         needs:
