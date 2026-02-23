@@ -27,6 +27,10 @@ jobs:
             - name: Checkout
               uses: actions/checkout@v6
 
+            - name: Extract version from tag
+              id: version
+              run: echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v3
 
@@ -44,7 +48,7 @@ jobs:
                   platforms: ${{ matrix.platform }}
                   push: true
                   tags: |
-                      kuncodes/ferron-proxy-manager-backend:${{ github.ref_name }}-${{ matrix.arch }}
+                      kuncodes/ferron-proxy-manager-backend:${{ steps.version.outputs.version }}-${{ matrix.arch }}
                       kuncodes/ferron-proxy-manager-backend:latest-${{ matrix.arch }}
 
     publish-backend-manifest:
@@ -60,13 +64,18 @@ jobs:
                   username: ${{ secrets.DOCKERHUB_USERNAME }}
                   password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+            - name: Extract version from tag
+              id: version
+              run: echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
             - name: Create backend multi-arch manifests
               run: |
+                  VERSION=${{ steps.version.outputs.version }}
                   docker buildx imagetools create \
-                    -t kuncodes/ferron-proxy-manager-backend:${GITHUB_REF_NAME} \
+                    -t kuncodes/ferron-proxy-manager-backend:${VERSION} \
                     -t kuncodes/ferron-proxy-manager-backend:latest \
-                    kuncodes/ferron-proxy-manager-backend:${GITHUB_REF_NAME}-amd64 \
-                    kuncodes/ferron-proxy-manager-backend:${GITHUB_REF_NAME}-arm64
+                    kuncodes/ferron-proxy-manager-backend:${VERSION}-amd64 \
+                    kuncodes/ferron-proxy-manager-backend:${VERSION}-arm64
 
     publish-frontend:
         needs:
@@ -88,6 +97,10 @@ jobs:
         steps:
             - name: Checkout
               uses: actions/checkout@v6
+
+            - name: Extract version from tag
+              id: version
+              run: echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
 
             - name: Set up Node.js
               uses: actions/setup-node@v6
@@ -154,7 +167,7 @@ jobs:
                   platforms: ${{ matrix.platform }}
                   push: true
                   tags: |
-                      kuncodes/ferron-proxy-manager-frontend:${{ github.ref_name }}-${{ matrix.arch }}
+                      kuncodes/ferron-proxy-manager-frontend:${{ steps.version.outputs.version }}-${{ matrix.arch }}
                       kuncodes/ferron-proxy-manager-frontend:latest-${{ matrix.arch }}
 
             - name: Stop backend dev container
@@ -175,10 +188,15 @@ jobs:
                   username: ${{ secrets.DOCKERHUB_USERNAME }}
                   password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+            - name: Extract version from tag
+              id: version
+              run: echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
             - name: Create frontend multi-arch manifests
               run: |
+                  VERSION=${{ steps.version.outputs.version }}
                   docker buildx imagetools create \
-                    -t kuncodes/ferron-proxy-manager-frontend:${GITHUB_REF_NAME} \
+                    -t kuncodes/ferron-proxy-manager-frontend:${VERSION} \
                     -t kuncodes/ferron-proxy-manager-frontend:latest \
-                    kuncodes/ferron-proxy-manager-frontend:${GITHUB_REF_NAME}-amd64 \
-                    kuncodes/ferron-proxy-manager-frontend:${GITHUB_REF_NAME}-arm64
+                    kuncodes/ferron-proxy-manager-frontend:${VERSION}-amd64 \
+                    kuncodes/ferron-proxy-manager-frontend:${VERSION}-arm64
