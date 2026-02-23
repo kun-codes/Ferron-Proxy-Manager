@@ -14,66 +14,66 @@ jobs:
             fail-fast: false
             matrix:
                 include:
-                    - runner: ubuntu-latest
-                      platform: linux/amd64
-                      arch: amd64
-                    - runner: ubuntu-24.04-arm
-                      platform: linux/arm64
-                      arch: arm64
+                    -   runner: ubuntu-latest
+                        platform: linux/amd64
+                        arch: amd64
+                    -   runner: ubuntu-24.04-arm
+                        platform: linux/arm64
+                        arch: arm64
 
         steps:
-            - name: Checkout
-              uses: actions/checkout@v6
+            -   name: Checkout
+                uses: actions/checkout@v6
 
-            - name: Extract version from tag
-              id: version
-              run: echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+            -   name: Extract version from tag
+                id: version
+                run: echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
 
-            - name: Set up Docker Buildx
-              uses: docker/setup-buildx-action@v3
+            -   name: Set up Docker Buildx
+                uses: docker/setup-buildx-action@v3
 
-            - name: Log in to Docker Hub
-              uses: docker/login-action@v3
-              with:
-                  username: ${{ secrets.DOCKERHUB_USERNAME }}
-                  password: ${{ secrets.DOCKERHUB_TOKEN }}
+            -   name: Log in to Docker Hub
+                uses: docker/login-action@v3
+                with:
+                    username: ${{ secrets.DOCKERHUB_USERNAME }}
+                    password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-            - name: Build and push backend (${{ matrix.arch }})
-              uses: docker/build-push-action@v6
-              with:
-                  context: ./backend
-                  file: ./backend/Dockerfile
-                  platforms: ${{ matrix.platform }}
-                  push: true
-                  tags: |
-                      kuncodes/ferron-proxy-manager-backend:${{ steps.version.outputs.version }}-${{ matrix.arch }}
-                      kuncodes/ferron-proxy-manager-backend:latest-${{ matrix.arch }}
+            -   name: Build and push backend (${{ matrix.arch }})
+                uses: docker/build-push-action@v6
+                with:
+                    context: ./backend
+                    file: ./backend/Dockerfile
+                    platforms: ${{ matrix.platform }}
+                    push: true
+                    tags: |
+                        kuncodes/ferron-proxy-manager-backend:${{ steps.version.outputs.version }}-${{ matrix.arch }}
+                        kuncodes/ferron-proxy-manager-backend:latest-${{ matrix.arch }}
 
     publish-backend-manifest:
         needs: publish-backend
         runs-on: ubuntu-latest
         steps:
-            - name: Set up Docker Buildx
-              uses: docker/setup-buildx-action@v3
+            -   name: Set up Docker Buildx
+                uses: docker/setup-buildx-action@v3
 
-            - name: Log in to Docker Hub
-              uses: docker/login-action@v3
-              with:
-                  username: ${{ secrets.DOCKERHUB_USERNAME }}
-                  password: ${{ secrets.DOCKERHUB_TOKEN }}
+            -   name: Log in to Docker Hub
+                uses: docker/login-action@v3
+                with:
+                    username: ${{ secrets.DOCKERHUB_USERNAME }}
+                    password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-            - name: Extract version from tag
-              id: version
-              run: echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+            -   name: Extract version from tag
+                id: version
+                run: echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
 
-            - name: Create backend multi-arch manifests
-              run: |
-                  VERSION=${{ steps.version.outputs.version }}
-                  docker buildx imagetools create \
-                    -t kuncodes/ferron-proxy-manager-backend:${VERSION} \
-                    -t kuncodes/ferron-proxy-manager-backend:latest \
-                    kuncodes/ferron-proxy-manager-backend:${VERSION}-amd64 \
-                    kuncodes/ferron-proxy-manager-backend:${VERSION}-arm64
+            -   name: Create backend multi-arch manifests
+                run: |
+                    VERSION=${{ steps.version.outputs.version }}
+                    docker buildx imagetools create \
+                      -t kuncodes/ferron-proxy-manager-backend:${VERSION} \
+                      -t kuncodes/ferron-proxy-manager-backend:latest \
+                      kuncodes/ferron-proxy-manager-backend:${VERSION}-amd64 \
+                      kuncodes/ferron-proxy-manager-backend:${VERSION}-arm64
 
     publish-frontend:
         needs:
@@ -85,119 +85,119 @@ jobs:
             fail-fast: false
             matrix:
                 include:
-                    - runner: ubuntu-latest
-                      platform: linux/amd64
-                      arch: amd64
-                    - runner: ubuntu-24.04-arm
-                      platform: linux/arm64
-                      arch: arm64
+                    -   runner: ubuntu-latest
+                        platform: linux/amd64
+                        arch: amd64
+                    -   runner: ubuntu-24.04-arm
+                        platform: linux/arm64
+                        arch: arm64
 
         steps:
-            - name: Checkout
-              uses: actions/checkout@v6
+            -   name: Checkout
+                uses: actions/checkout@v6
 
-            - name: Extract version from tag
-              id: version
-              run: echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+            -   name: Extract version from tag
+                id: version
+                run: echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
 
-            - name: Set up Node.js
-              uses: actions/setup-node@v6
-              with:
-                  node-version: 25
+            -   name: Set up Node.js
+                uses: actions/setup-node@v6
+                with:
+                    node-version: 25
 
-            - name: Set up pnpm
-              uses: pnpm/action-setup@v4
-              with:
-                  version: 10
+            -   name: Set up pnpm
+                uses: pnpm/action-setup@v4
+                with:
+                    version: 10
 
-            - name: Create `ferron.kdl` config file
-              run: |
-                  echo 'include "/etc/ferron-proxy-manager/main.kdl"' > ./backend/ferron.kdl
-                  chmod 644 ./backend/ferron.kdl
+            -   name: Create `ferron.kdl` config file
+                run: |
+                    echo 'include "/etc/ferron-proxy-manager/main.kdl"' > ./backend/ferron.kdl
+                    chmod 644 ./backend/ferron.kdl
 
-            - name: Create backend .env file
-              run: |
-                  cat > ./backend/.env << EOF
-                  PRODUCTION=false
-                  DATABASE_URL=sqlite+aiosqlite:///./data/ferron.db
-                  DATABASE_ECHO=false
-                  FERRON_CONTAINER_NAME=ferron
-                  AUTH_SECRET_KEY=ci-secret-key
-                  AUTH_REFRESH_SECRET_KEY=ci-refresh-secret-key
-                  AUTH_SIGNUP_DISABLED=false
-                  EOF
+            -   name: Create backend .env file
+                run: |
+                    cat > ./backend/.env << EOF
+                    PRODUCTION=false
+                    DATABASE_URL=sqlite+aiosqlite:///./data/ferron.db
+                    DATABASE_ECHO=false
+                    FERRON_CONTAINER_NAME=ferron
+                    AUTH_SECRET_KEY=ci-secret-key
+                    AUTH_REFRESH_SECRET_KEY=ci-refresh-secret-key
+                    AUTH_SIGNUP_DISABLED=false
+                    EOF
 
-            - name: Start backend dev container
-              run: docker compose -f docker-compose.dev.yml up -d --build backend
+            -   name: Start backend dev container
+                run: docker compose -f docker-compose.dev.yml up -d --build backend
 
-            - name: Wait for backend OpenAPI endpoint
-              run: |
-                  for i in $(seq 1 30); do
-                    if curl -fsS http://localhost:8000/openapi.json >/dev/null; then
-                      exit 0
-                    fi
-                    sleep 2
-                  done
-                  echo "Backend did not become ready in time."
-                  docker logs ferron-backend-dev
-                  exit 1
+            -   name: Wait for backend OpenAPI endpoint
+                run: |
+                    for i in $(seq 1 30); do
+                      if curl -fsS http://localhost:8000/openapi.json >/dev/null; then
+                        exit 0
+                      fi
+                      sleep 2
+                    done
+                    echo "Backend did not become ready in time."
+                    docker logs ferron-backend-dev
+                    exit 1
 
-            - name: Generate frontend API types
-              working-directory: ./frontend
-              run: |
-                  pnpm install --frozen-lockfile
-                  pnpm generate:types
+            -   name: Generate frontend API types
+                working-directory: ./frontend
+                run: |
+                    pnpm install --frozen-lockfile
+                    pnpm generate:types
 
-            - name: Set up Docker Buildx
-              uses: docker/setup-buildx-action@v3
+            -   name: Set up Docker Buildx
+                uses: docker/setup-buildx-action@v3
 
-            - name: Log in to Docker Hub
-              uses: docker/login-action@v3
-              with:
-                  username: ${{ secrets.DOCKERHUB_USERNAME }}
-                  password: ${{ secrets.DOCKERHUB_TOKEN }}
+            -   name: Log in to Docker Hub
+                uses: docker/login-action@v3
+                with:
+                    username: ${{ secrets.DOCKERHUB_USERNAME }}
+                    password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-            - name: Build and push frontend (${{ matrix.arch }})
-              uses: docker/build-push-action@v6
-              with:
-                  context: ./frontend
-                  file: ./frontend/Dockerfile
-                  platforms: ${{ matrix.platform }}
-                  push: true
-                  tags: |
-                      kuncodes/ferron-proxy-manager-frontend:${{ steps.version.outputs.version }}-${{ matrix.arch }}
-                      kuncodes/ferron-proxy-manager-frontend:latest-${{ matrix.arch }}
+            -   name: Build and push frontend (${{ matrix.arch }})
+                uses: docker/build-push-action@v6
+                with:
+                    context: ./frontend
+                    file: ./frontend/Dockerfile
+                    platforms: ${{ matrix.platform }}
+                    push: true
+                    tags: |
+                        kuncodes/ferron-proxy-manager-frontend:${{ steps.version.outputs.version }}-${{ matrix.arch }}
+                        kuncodes/ferron-proxy-manager-frontend:latest-${{ matrix.arch }}
 
-            - name: Stop backend dev container
-              if: always()
-              run: docker compose -f docker-compose.dev.yml down || true
+            -   name: Stop backend dev container
+                if: always()
+                run: docker compose -f docker-compose.dev.yml down || true
 
     publish-frontend-manifest:
         needs:
             - publish-frontend
         runs-on: ubuntu-latest
         steps:
-            - name: Set up Docker Buildx
-              uses: docker/setup-buildx-action@v3
+            -   name: Set up Docker Buildx
+                uses: docker/setup-buildx-action@v3
 
-            - name: Log in to Docker Hub
-              uses: docker/login-action@v3
-              with:
-                  username: ${{ secrets.DOCKERHUB_USERNAME }}
-                  password: ${{ secrets.DOCKERHUB_TOKEN }}
+            -   name: Log in to Docker Hub
+                uses: docker/login-action@v3
+                with:
+                    username: ${{ secrets.DOCKERHUB_USERNAME }}
+                    password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-            - name: Extract version from tag
-              id: version
-              run: echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+            -   name: Extract version from tag
+                id: version
+                run: echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
 
-            - name: Create frontend multi-arch manifests
-              run: |
-                  VERSION=${{ steps.version.outputs.version }}
-                  docker buildx imagetools create \
-                    -t kuncodes/ferron-proxy-manager-frontend:${VERSION} \
-                    -t kuncodes/ferron-proxy-manager-frontend:latest \
-                    kuncodes/ferron-proxy-manager-frontend:${VERSION}-amd64 \
-                    kuncodes/ferron-proxy-manager-frontend:${VERSION}-arm64
+            -   name: Create frontend multi-arch manifests
+                run: |
+                    VERSION=${{ steps.version.outputs.version }}
+                    docker buildx imagetools create \
+                      -t kuncodes/ferron-proxy-manager-frontend:${VERSION} \
+                      -t kuncodes/ferron-proxy-manager-frontend:latest \
+                      kuncodes/ferron-proxy-manager-frontend:${VERSION}-amd64 \
+                      kuncodes/ferron-proxy-manager-frontend:${VERSION}-arm64
 
     create-release:
         needs:
@@ -207,17 +207,17 @@ jobs:
         permissions:
             contents: write
         steps:
-            - name: Checkout
-              uses: actions/checkout@v6
+            -   name: Checkout
+                uses: actions/checkout@v6
 
-            - name: Create draft release
-              env:
-                  GH_TOKEN: ${{ github.token }}
-              run: |
-                  gh release create ${{ github.ref_name }} \
-                    --draft \
-                    --title "Release ${{ github.ref_name }}" \
-                    --notes "
-
-                  ## Changelog
-                  *ADD RELEASE NOTES HERE*"
+            -   name: Create draft release
+                env:
+                    GH_TOKEN: ${{ github.token }}
+                run: |
+                    gh release create ${{ github.ref_name }} \
+                      --draft \
+                      --title "Release ${{ github.ref_name }}" \
+                      --notes "
+                    
+                    ## Changelog
+                    *ADD RELEASE NOTES HERE*"
