@@ -200,3 +200,26 @@ jobs:
                     -t kuncodes/ferron-proxy-manager-frontend:latest \
                     kuncodes/ferron-proxy-manager-frontend:${VERSION}-amd64 \
                     kuncodes/ferron-proxy-manager-frontend:${VERSION}-arm64
+
+    create-release:
+        needs:
+            - publish-backend-manifest
+            - publish-frontend-manifest
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v6
+
+            - name: Create draft release
+              env:
+                  GH_TOKEN: ${{ github.token }}
+              run: |
+                  gh release create ${{ github.ref_name }} \
+                    --draft \
+                    --title "Release ${{ github.ref_name }}" \
+                    --notes "
+
+                  ## Changelog
+                  *ADD RELEASE NOTES HERE*"
