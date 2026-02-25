@@ -24,7 +24,7 @@ server without writing config files. It provides an easy to use web UI to manage
 
 ## Screenshots
 
-### Manage Global Config
+### Manage Global Configuration
 
 ![Manage Global Config](./screenshots/manage_global_config.png)
 
@@ -42,7 +42,18 @@ server without writing config files. It provides an easy to use web UI to manage
 2. Download the [docker-compose.yml](./docker-compose.yml) file.
 3. Provide values for the environment variables in the docker-compose file.
 4. Create a file named `ferron.kdl` in the same directory as the `docker-compose.yml` file.
-5. **TODO**: Add instructions for contains the `ferron.kdl` file.
+5. Add the following to `ferron.kdl`:
+
+   ```kdl
+   include "/etc/ferron-proxy-manager/main.kdl"
+
+   subdomain.example.com {
+       proxy "http://frontend:3000"
+   }
+   ```
+
+   Replace `subdomain.example.com` with the subdomain you want to use for your Ferron Proxy Manager instance.
+
 6. Run `docker-compose up -d` in the same directory as the `docker-compose.yml` file.
 
 Note: Make sure to turn off new users signups once you have created the required user(s).
