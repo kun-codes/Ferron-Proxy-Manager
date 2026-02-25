@@ -24,7 +24,7 @@ server without writing config files. It provides an easy to use web UI to manage
 
 ## Screenshots
 
-### Manage Global Config
+### Manage Global Configuration
 
 ![Manage Global Config](./screenshots/manage_global_config.png)
 
