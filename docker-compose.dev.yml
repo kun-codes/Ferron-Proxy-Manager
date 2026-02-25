@@ -9,6 +9,9 @@ services:
             - "ferron-acme:/var/cache/ferron-acme" # for persistent automatic TLS cache
             - "./backend/ferron.kdl:/etc/ferron.kdl"
             - "ferron-sub-configs:/etc/ferron-proxy-manager/"
+        networks:
+            - default
+            - fpm-network
         restart: always
 
     backend:
@@ -48,3 +51,8 @@ services:
 volumes:
     ferron-acme:
     ferron-sub-configs:
+
+networks:
+    fpm-network:
+        name: fpm-network
+        external: true
