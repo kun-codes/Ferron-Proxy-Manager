@@ -52,7 +52,7 @@ server without writing config files. It provides an easy to use web UI to manage
    }
    ```
 
-   Replace `subdomain.example.com` with the subdomain you want to use for your Ferron Proxy Manager instance.
+   Replace `subdomain.example.com` with the domain you want to use for your Ferron Proxy Manager instance.
 
 6. Run `docker-compose up -d` in the same directory as the `docker-compose.yml` file.
 
