@@ -47,7 +47,7 @@ server without writing config files. It provides an easy to use web UI to manage
    ```kdl
    include "/etc/ferron-proxy-manager/main.kdl"
 
-   subdomain.example.com {
+   "subdomain.example.com" {
        proxy "http://frontend:3000"
    }
    ```
