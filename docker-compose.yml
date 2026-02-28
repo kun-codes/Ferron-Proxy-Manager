@@ -26,8 +26,8 @@ services:
             - PRODUCTION=true
             - DATABASE_URL=sqlite+aiosqlite:///./data/ferron.db
             - DATABASE_ECHO=false
-            - AUTH_SECRET_KEY=change-this-secret-key
-            - AUTH_REFRESH_SECRET_KEY=change-this-refresh-secret-key
+            - AUTH_SECRET_KEY=change-this-secret-key  # use `openssl rand -hex 32` to generate
+            - AUTH_REFRESH_SECRET_KEY=change-this-refresh-secret-key # use `openssl rand -hex 32` to generate. Keep it different from AUTH_SECRET_KEY
             - AUTH_SIGNUP_DISABLED=false # change this to true to disable new signups
             - FERRON_CONTAINER_NAME=ferron # change this if you changed the container name of ferron service
         restart: always
