@@ -59,6 +59,10 @@ server without writing config files. It provides an easy to use web UI to manage
 
 Note: Make sure to turn off new users signups once you have created the required user(s).
 
+## Usage
+
+See [USAGE.md](./docs/USAGE.md)
+
 ## License
 
 The project is open source and is available under the [AGPL-3.0 License](./LICENSE).
