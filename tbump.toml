@@ -1,7 +1,7 @@
 github_url = "https://github.com/kun-codes/Ferron-Proxy-Manager/"
 
 [version]
-current = "0.1.0"
+current = "0.1.0-alpha"
 
 # from: https://codeberg.org/your-tools/tbump/src/commit/4c5fee99a8287d3a6a88f915c121f36e78662784#setting-default-values-for-version-fields
 regex = '''
