@@ -1,7 +1,7 @@
 [project]
 name = "Ferron-Proxy-Manager"
 version = "0.1.0"
-description = "Add your description here"
+description = "A Web UI for Ferron web server"
 requires-python = "==3.13.*"
 dependencies = [
     "aiodocker>=0.25.0",
