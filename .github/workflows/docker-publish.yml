@@ -128,6 +128,9 @@ jobs:
                     AUTH_SIGNUP_DISABLED=false
                     EOF
 
+            -   name: Create external networks
+                run: docker network create fpm-network
+
             -   name: Start backend dev container
                 run: docker compose -f docker-compose.dev.yml up -d --build backend
 
