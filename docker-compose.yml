@@ -54,5 +54,4 @@ volumes:
 
 networks:
     fpm-network:
-        name: fpm-network
         external: true
