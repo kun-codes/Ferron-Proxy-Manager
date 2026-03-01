@@ -15,7 +15,7 @@ services:
         restart: always
 
     backend:
-        image: kuncodes/ferron-proxy-manager-backend:latest
+        image: kuncodes/ferron-proxy-manager-backend:0.1.0-alpha  # pinned version because of potential breaking changes in alpha
         container_name: ferron-proxy-manager-backend
         volumes:
             - ferron-data:/app/data
@@ -35,7 +35,7 @@ services:
             - ferron
 
     frontend:
-        image: kuncodes/ferron-proxy-manager-frontend:latest
+        image: kuncodes/ferron-proxy-manager-frontend:0.1.0-alpha  # pinned version because of potential breaking changes in alpha
         container_name: ferron-proxy-manager-frontend
         ports:
             - "3000:3000"
