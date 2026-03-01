@@ -32,7 +32,7 @@
             external: true
     ```
 
-  Notice how the `fpm-network` is defined in the `docker-compose.yml` file. This is the same network defined in the [
+  Notice that the `fpm-network` is defined in the `docker-compose.yml` file. This is the same network defined in the [
   docker-compose.yml](./../docker-compose.yml) file.
 
   We also removed the `ports` section from the `dozzle` container. This is because our `ferron` service in
@@ -47,5 +47,5 @@
   You can use the same backend url for a load balancer.
 
 - For docker compose files with multiple services, attach the `fpm-network` to the service that you want to
-  connect to the reverse proxy or load balancer which is most likely going to be the one which exposes a web UI or is
-  the one which you want to be publicly accessible.
+  connect to the reverse proxy or load balancer. This is typically the service which exposes a web UI or the one which
+  you want to be publicly accessible.
