@@ -42,6 +42,8 @@ services:
             - "5173:5173"
         volumes:
             - ./frontend:/app
+            # exclude node_modules from above bind mount using an anonymous volume
+            - /app/node_modules
         env_file:
             - ./frontend/.env
         restart: unless-stopped
