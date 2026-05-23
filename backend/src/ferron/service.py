@@ -1,3 +1,4 @@
+import asyncio
 from typing import Annotated
 
 import sqlalchemy.exc
@@ -19,6 +20,15 @@ from src.ferron.utils import (
     write_reverse_proxy_config_to_file,
     write_static_file_config_to_file,
 )
+
+
+async def _trigger_favicon_refresh(virtual_host_id: int, virtual_host_name: str) -> None:
+    """
+    this function exists to avoid a circular import
+    """
+    from src.fpm.service import refresh_favicon_for_host
+
+    await refresh_favicon_for_host(virtual_host_id, virtual_host_name)
 
 
 def _reverse_proxy_to_schema(config: models.ReverseProxyConfig) -> schemas.UpdateReverseProxyConfig:
@@ -131,6 +141,8 @@ async def create_reverse_proxy_config(
 
     await reload_ferron_service()
 
+    asyncio.create_task(_trigger_favicon_refresh(virtual_host.id, virtual_host.virtual_host_name))
+
     return reverse_proxy_config_schema
 
 
@@ -179,6 +191,9 @@ async def update_reverse_proxy_config(
     await session.commit()
 
     await reload_ferron_service()
+
+    vh = existing_config.virtual_host
+    asyncio.create_task(_trigger_favicon_refresh(vh.id, vh.virtual_host_name))
 
     return existing_config_schema
 
@@ -293,6 +308,8 @@ async def create_load_balancer_config(
 
     await reload_ferron_service()
 
+    asyncio.create_task(_trigger_favicon_refresh(virtual_host.id, virtual_host.virtual_host_name))
+
     return load_balancer_config_schema
 
 
@@ -355,6 +372,9 @@ async def update_load_balancer_config(
     await session.commit()
 
     await reload_ferron_service()
+
+    vh = existing_config.virtual_host
+    asyncio.create_task(_trigger_favicon_refresh(vh.id, vh.virtual_host_name))
 
     return existing_config_schema
 
@@ -461,6 +481,8 @@ async def create_static_file_config(
 
     await reload_ferron_service()
 
+    asyncio.create_task(_trigger_favicon_refresh(virtual_host.id, virtual_host.virtual_host_name))
+
     return static_file_config_schema
 
 
@@ -508,6 +530,9 @@ async def update_static_file_config(
     await session.commit()
 
     await reload_ferron_service()
+
+    vh = existing_config.virtual_host
+    asyncio.create_task(_trigger_favicon_refresh(vh.id, vh.virtual_host_name))
 
     return existing_config_schema
 
