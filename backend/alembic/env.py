@@ -7,6 +7,7 @@ from alembic import context
 from src.auth.models import *  # noqa: F403 # to import all tables automatically
 from src.config import settings
 from src.ferron.models import *  # noqa: F403 # to import all tables automatically
+from src.fpm.models import *  # noqa: F403 # to import all tables automatically
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
