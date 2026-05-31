@@ -22,13 +22,13 @@ from src.ferron.utils import (
 )
 
 
-async def _trigger_favicon_refresh(virtual_host_id: int, virtual_host_name: str) -> None:
+async def _trigger_favicon_refresh(virtual_host_id: int) -> None:
     """
     this function exists to avoid a circular import
     """
     from src.fpm.service import refresh_favicon_for_host
 
-    await refresh_favicon_for_host(virtual_host_id, virtual_host_name)
+    await refresh_favicon_for_host(virtual_host_id)
 
 
 def _reverse_proxy_to_schema(config: models.ReverseProxyConfig) -> schemas.UpdateReverseProxyConfig:
@@ -133,6 +133,8 @@ async def create_reverse_proxy_config(
     except sqlalchemy.exc.IntegrityError:
         raise VirtualHostNameAlreadyExists(virtual_host_name=create_reverse_proxy_config_data.virtual_host_name)
 
+    virtual_host_id = virtual_host.id
+
     reverse_proxy_config_schema = _reverse_proxy_to_schema(reverse_proxy_config)
 
     await write_reverse_proxy_config_to_file(reverse_proxy_config_schema)
@@ -141,7 +143,7 @@ async def create_reverse_proxy_config(
 
     await reload_ferron_service()
 
-    asyncio.create_task(_trigger_favicon_refresh(virtual_host.id, virtual_host.virtual_host_name))
+    asyncio.create_task(_trigger_favicon_refresh(virtual_host_id))
 
     return reverse_proxy_config_schema
 
@@ -188,12 +190,13 @@ async def update_reverse_proxy_config(
     existing_config_schema = _reverse_proxy_to_schema(existing_config)
     await write_reverse_proxy_config_to_file(existing_config_schema)
 
+    virtual_host_id = existing_config.virtual_host.id
+
     await session.commit()
 
     await reload_ferron_service()
 
-    vh = existing_config.virtual_host
-    asyncio.create_task(_trigger_favicon_refresh(vh.id, vh.virtual_host_name))
+    asyncio.create_task(_trigger_favicon_refresh(virtual_host_id))
 
     return existing_config_schema
 
@@ -300,6 +303,8 @@ async def create_load_balancer_config(
     # have to refresh to get the backend_urls_relationship loaded.
     await session.refresh(load_balancer_config, attribute_names=["backend_urls_relationship", "virtual_host"])
 
+    virtual_host_id = virtual_host.id
+
     load_balancer_config_schema = _load_balancer_to_schema(load_balancer_config)
 
     await write_load_balancer_config_to_file(load_balancer_config_schema)
@@ -308,7 +313,7 @@ async def create_load_balancer_config(
 
     await reload_ferron_service()
 
-    asyncio.create_task(_trigger_favicon_refresh(virtual_host.id, virtual_host.virtual_host_name))
+    asyncio.create_task(_trigger_favicon_refresh(virtual_host_id))
 
     return load_balancer_config_schema
 
@@ -369,12 +374,13 @@ async def update_load_balancer_config(
     existing_config_schema = _load_balancer_to_schema(existing_config)
     await write_load_balancer_config_to_file(existing_config_schema)
 
+    virtual_host_id = existing_config.virtual_host.id
+
     await session.commit()
 
     await reload_ferron_service()
 
-    vh = existing_config.virtual_host
-    asyncio.create_task(_trigger_favicon_refresh(vh.id, vh.virtual_host_name))
+    asyncio.create_task(_trigger_favicon_refresh(virtual_host_id))
 
     return existing_config_schema
 
@@ -473,6 +479,8 @@ async def create_static_file_config(
     except sqlalchemy.exc.IntegrityError:
         raise VirtualHostNameAlreadyExists(virtual_host_name=create_static_file_config_data.virtual_host_name)
 
+    virtual_host_id = virtual_host.id
+
     static_file_config_schema = _static_file_to_schema(static_file_config)
 
     await write_static_file_config_to_file(static_file_config_schema)
@@ -481,7 +489,7 @@ async def create_static_file_config(
 
     await reload_ferron_service()
 
-    asyncio.create_task(_trigger_favicon_refresh(virtual_host.id, virtual_host.virtual_host_name))
+    asyncio.create_task(_trigger_favicon_refresh(virtual_host_id))
 
     return static_file_config_schema
 
@@ -527,12 +535,13 @@ async def update_static_file_config(
     existing_config_schema = _static_file_to_schema(existing_config)
     await write_static_file_config_to_file(existing_config_schema)
 
+    virtual_host_id = existing_config.virtual_host.id
+
     await session.commit()
 
     await reload_ferron_service()
 
-    vh = existing_config.virtual_host
-    asyncio.create_task(_trigger_favicon_refresh(vh.id, vh.virtual_host_name))
+    asyncio.create_task(_trigger_favicon_refresh(virtual_host_id))
 
     return existing_config_schema
 

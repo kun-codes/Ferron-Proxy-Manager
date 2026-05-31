@@ -58,10 +58,15 @@ async def _refresh_favicon_cache(entry: models.DashboardFaviconCache) -> tuple[s
     return favicon_data_url, is_placeholder, utcnow()
 
 
-async def refresh_favicon_for_host(virtual_host_id: int, virtual_host_name: str) -> None:
+async def refresh_favicon_for_host(virtual_host_id: int) -> None:
     # using AsyncSession directly instead of get_session() because this is called from background tasks and not
     # request handlers
     async with AsyncSession(engine) as session:
+        vh = await session.get(VirtualHost, virtual_host_id)
+        if vh is None:
+            return
+
+        virtual_host_name = vh.virtual_host_name
         favicon_data_url, is_placeholder = await fetch_favicon_payload(virtual_host_name)
         now = utcnow()
 
