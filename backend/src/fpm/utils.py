@@ -7,7 +7,7 @@ from extract_favicon.config import Favicon
 from extract_favicon.main_async import get_best_favicon
 from PIL import Image
 
-from src.fpm.constants import FAVICON_STRATEGY
+from src.fpm.constants import CONTENT_ONLY_STRATEGY
 
 
 def utcnow() -> datetime:
@@ -75,7 +75,7 @@ def encode_favicon_image(favicon: Favicon) -> str:
 
 async def fetch_favicon_payload(virtual_host_name: str) -> tuple[str, bool]:
     target_url = build_target_url(virtual_host_name)
-    favicon = await get_best_favicon(target_url, strategy=FAVICON_STRATEGY, include_fallbacks=True)
+    favicon = await get_best_favicon(target_url, strategy=CONTENT_ONLY_STRATEGY, include_fallbacks=True)
     is_placeholder = favicon is None or favicon.image is None
 
     if is_placeholder:
