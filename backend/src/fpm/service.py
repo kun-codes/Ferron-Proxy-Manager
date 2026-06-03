@@ -12,7 +12,7 @@ from src.database import engine, get_session
 from src.ferron.models import VirtualHost
 from src.fpm import models, schemas
 from src.fpm.constants import FAVICON_REFRESH_TTL
-from src.fpm.utils import build_target_url, fetch_favicon_payload, normalize_datetime, utcnow
+from src.fpm.utils import build_target_url, fetch_favicon_payload, normalize_datetime, resolve_local_favicon_url, utcnow
 
 
 async def read_dashboard_hosts(
@@ -53,8 +53,12 @@ async def read_dashboard_hosts(
     return result
 
 
-async def _refresh_favicon_cache(entry: models.DashboardFaviconCache) -> tuple[str, bool, datetime]:
-    favicon_data_url, is_placeholder = await fetch_favicon_payload(entry.virtual_host.virtual_host_name)
+async def _refresh_favicon_cache(
+    entry: models.DashboardFaviconCache, local_url: str | None = None
+) -> tuple[str, bool, datetime]:
+    favicon_data_url, is_placeholder = await fetch_favicon_payload(
+        entry.virtual_host.virtual_host_name, local_url=local_url
+    )
     return favicon_data_url, is_placeholder, utcnow()
 
 
@@ -67,7 +71,8 @@ async def refresh_favicon_for_host(virtual_host_id: int) -> None:
             return
 
         virtual_host_name = vh.virtual_host_name
-        favicon_data_url, is_placeholder = await fetch_favicon_payload(virtual_host_name)
+        local_url = await resolve_local_favicon_url(session, virtual_host_id)
+        favicon_data_url, is_placeholder = await fetch_favicon_payload(virtual_host_name, local_url=local_url)
         now = utcnow()
 
         result = await session.exec(
@@ -107,8 +112,17 @@ async def refresh_all_stale_favicons() -> None:
         if not stale_entries:
             return
 
+        # Pre-compute local URLs for all stale entries to avoid concurrent session access
+        local_urls: dict[int, str | None] = {}
+        for entry in stale_entries:
+            local_url = await resolve_local_favicon_url(session, entry.virtual_host_id)
+            local_urls[entry.virtual_host_id] = local_url
+
         refreshed_entries = await asyncio.gather(
-            *[_refresh_favicon_cache(entry) for entry in stale_entries],
+            *[
+                _refresh_favicon_cache(entry, local_url=local_urls.get(entry.virtual_host_id))
+                for entry in stale_entries
+            ],
             return_exceptions=True,
         )
 
