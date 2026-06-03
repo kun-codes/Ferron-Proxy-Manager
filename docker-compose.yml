@@ -33,6 +33,9 @@ services:
         restart: always
         depends_on:
             - ferron
+        networks:
+            - default
+            - fpm-network
 
     frontend:
         image: kuncodes/ferron-proxy-manager-frontend:0.1.0-alpha  # pinned version because of potential breaking changes in alpha
