@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import warnings
 from datetime import datetime, timezone
 from io import BytesIO
 from urllib.parse import urlparse, urlunparse
@@ -16,7 +17,7 @@ from sqlalchemy.orm import selectinload
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from src.config import settings
-from src.ferron.constants import DEFAULT_HTTP_PORT
+from src.ferron.constants import DEFAULT_HTTPS_PORT
 from src.ferron.models import GlobalConfig, VirtualHost
 from src.fpm.constants import (
     _LOCALHOST_ALIASES,
@@ -95,13 +96,13 @@ async def resolve_local_favicon_url(session: AsyncSession, virtual_host_id: int)
     # static file config means we use the local Ferron container's URL so we don't go over the internet
     if vh.static_file_config is not None:
         global_config = await session.get(GlobalConfig, 1)
-        http_port = global_config.default_http_port if global_config else DEFAULT_HTTP_PORT
-        url = f"http://{settings.ferron_container_name}:{http_port}/"
+        https_port = global_config.default_https_port if global_config else DEFAULT_HTTPS_PORT
+        url = f"https://{settings.ferron_container_name}:{https_port}/"
         logger.info(
             "resolve_local_favicon_url: vh='{}' is static-file -> local_url={} (port={})",
             vh.virtual_host_name,
             url,
-            http_port,
+            https_port,
         )
         return url
 
@@ -109,26 +110,29 @@ async def resolve_local_favicon_url(session: AsyncSession, virtual_host_id: int)
     return None
 
 
-async def wait_for_url(url: str, headers: dict[str, str] | None = None) -> bool:
+async def wait_for_url(url: str, headers: dict[str, str] | None = None, verify: bool = True) -> bool:
     start = asyncio.get_event_loop().time()
 
-    logger.debug("wait_for_url: starting wait for {} (headers={})", url, headers)
+    logger.debug("wait_for_url: starting wait for {} (headers={}, verify={})", url, headers, verify)
 
-    async with httpx.AsyncClient(timeout=5.0) as client:
-        while asyncio.get_event_loop().time() - start < FAVICON_WAIT_TIMEOUT:
-            try:
-                resp = await client.get(url, headers=headers or {})
-                if resp.status_code < 400:
-                    logger.debug("wait_for_url: {} responded with status={}, reachable", url, resp.status_code)
-                    return True
-            except httpx.ConnectError:
-                logger.trace("wait_for_url: ConnectError for {}", url)
-            except httpx.ConnectTimeout:
-                logger.trace("wait_for_url: ConnectTimeout for {}", url)
-            except httpx.ReadTimeout:
-                logger.trace("wait_for_url: ReadTimeout for {}", url)
+    with warnings.catch_warnings():
+        if verify is False:
+            warnings.filterwarnings("ignore", message="Unverified HTTPS request")
+        async with httpx.AsyncClient(timeout=5.0, verify=verify) as client:
+            while asyncio.get_event_loop().time() - start < FAVICON_WAIT_TIMEOUT:
+                try:
+                    resp = await client.get(url, headers=headers or {})
+                    if resp.status_code < 400:
+                        logger.debug("wait_for_url: {} responded with status={}, reachable", url, resp.status_code)
+                        return True
+                except httpx.ConnectError:
+                    logger.trace("wait_for_url: ConnectError for {}", url)
+                except httpx.ConnectTimeout:
+                    logger.trace("wait_for_url: ConnectTimeout for {}", url)
+                except httpx.ReadTimeout:
+                    logger.trace("wait_for_url: ReadTimeout for {}", url)
 
-            await asyncio.sleep(FAVICON_WAIT_INTERVAL)
+                await asyncio.sleep(FAVICON_WAIT_INTERVAL)
 
     logger.warning("wait_for_url: timed out for {} after {}s", url, FAVICON_WAIT_TIMEOUT)
     return False
@@ -182,6 +186,19 @@ def encode_favicon_image(favicon: Favicon) -> str:
     raise ValueError("Unsupported favicon image payload")
 
 
+class _InsecureAsyncClient(AsyncClient):
+    async def open(self) -> None:
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="Unverified HTTPS request")
+            self.client = httpx.AsyncClient(
+                transport=self.transport,
+                timeout=self.timeout,
+                headers=self.headers,
+                http2=True,
+                verify=False,
+            )
+
+
 async def fetch_favicon_payload(virtual_host_name: str, local_url: str | None = None) -> tuple[str, bool]:
     target_url = local_url if local_url else build_target_url(virtual_host_name)
     logger.info("fetch_favicon_payload: vh='{}', target_url={}, local_url={}", virtual_host_name, target_url, local_url)
@@ -192,20 +209,20 @@ async def fetch_favicon_payload(virtual_host_name: str, local_url: str | None = 
     if local_url is not None:
         parsed = urlparse(local_url)
         if parsed.hostname == settings.ferron_container_name:  # only true for static configs as
-            # local_url is http://{ferron_container_name}
+            # local_url is https://{ferron_container_name}
             host_headers = {"Host": virtual_host_name}  # this is how ferron will know which static site to serve
             # this header is set in a browser as well
             logger.info(
-                "fetch_favicon_payload: creating custom AsyncClient with Host='{}' for {}",
+                "fetch_favicon_payload: creating insecure AsyncClient (verify=False) with Host='{}' for {}",
                 virtual_host_name,
                 target_url,
             )
-            custom_client = AsyncClient(headers=host_headers)
+            custom_client = _InsecureAsyncClient(headers=host_headers)
             await custom_client.open()
 
     try:
         if custom_client is not None:  # static configs
-            await wait_for_url(target_url, headers=host_headers)
+            await wait_for_url(target_url, headers=host_headers, verify=False)
         else:  # others like reverse proxy configs and load balancer configs
             await wait_for_url(target_url)
 
