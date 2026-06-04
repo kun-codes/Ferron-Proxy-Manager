@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Annotated
 
 from fastapi import Depends
+from loguru import logger
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import selectinload
@@ -56,22 +57,26 @@ async def read_dashboard_hosts(
 async def _refresh_favicon_cache(
     entry: models.DashboardFaviconCache, local_url: str | None = None
 ) -> tuple[str, bool, datetime]:
-    favicon_data_url, is_placeholder = await fetch_favicon_payload(
-        entry.virtual_host.virtual_host_name, local_url=local_url
-    )
+    vh_name = entry.virtual_host.virtual_host_name
+    logger.debug("_refresh_favicon_cache: vh='{}', local_url={}", vh_name, local_url)
+    favicon_data_url, is_placeholder = await fetch_favicon_payload(vh_name, local_url=local_url)
+    logger.info("_refresh_favicon_cache: vh='{}' done, placeholder={}", vh_name, is_placeholder)
     return favicon_data_url, is_placeholder, utcnow()
 
 
 async def refresh_favicon_for_host(virtual_host_id: int) -> None:
     # using AsyncSession directly instead of get_session() because this is called from background tasks and not
     # request handlers
+    logger.info("refresh_favicon_for_host: starting for vh_id={}", virtual_host_id)
     async with AsyncSession(engine) as session:
         vh = await session.get(VirtualHost, virtual_host_id)
         if vh is None:
+            logger.warning("refresh_favicon_for_host: vh_id={} not found, skipping", virtual_host_id)
             return
 
         virtual_host_name = vh.virtual_host_name
         local_url = await resolve_local_favicon_url(session, virtual_host_id)
+        logger.info("refresh_favicon_for_host: vh='{}', local_url={}", virtual_host_name, local_url)
         favicon_data_url, is_placeholder = await fetch_favicon_payload(virtual_host_name, local_url=local_url)
         now = utcnow()
 
@@ -88,12 +93,23 @@ async def refresh_favicon_for_host(virtual_host_id: int) -> None:
                 fetched_at=now,
             )
             session.add(entry)
+            logger.info(
+                "refresh_favicon_for_host: created new cache entry for '{}', placeholder={}",
+                virtual_host_name,
+                is_placeholder,
+            )
         else:
             entry.favicon_data_url = favicon_data_url
             entry.is_placeholder = is_placeholder
             entry.fetched_at = now
+            logger.info(
+                "refresh_favicon_for_host: updated cache entry for '{}', placeholder={}",
+                virtual_host_name,
+                is_placeholder,
+            )
 
         await session.commit()
+        logger.info("refresh_favicon_for_host: committed for '{}'", virtual_host_name)
 
 
 async def refresh_all_stale_favicons() -> None:
@@ -103,13 +119,15 @@ async def refresh_all_stale_favicons() -> None:
         cache_result = await session.exec(
             select(models.DashboardFaviconCache).options(selectinload(models.DashboardFaviconCache.virtual_host))
         )
+        all_entries = cache_result.scalars().all()
         stale_entries = [
-            entry
-            for entry in cache_result.scalars().all()
-            if utcnow() - normalize_datetime(entry.fetched_at) >= FAVICON_REFRESH_TTL
+            entry for entry in all_entries if utcnow() - normalize_datetime(entry.fetched_at) >= FAVICON_REFRESH_TTL
         ]
 
+        logger.info("refresh_all_stale_favicons: {} total entries, {} stale", len(all_entries), len(stale_entries))
+
         if not stale_entries:
+            logger.debug("refresh_all_stale_favicons: no stale entries to refresh")
             return
 
         # Pre-compute local URLs for all stale entries to avoid concurrent session access
@@ -118,6 +136,7 @@ async def refresh_all_stale_favicons() -> None:
             local_url = await resolve_local_favicon_url(session, entry.virtual_host_id)
             local_urls[entry.virtual_host_id] = local_url
 
+        logger.info("refresh_all_stale_favicons: refreshing {} stale entries...", len(stale_entries))
         refreshed_entries = await asyncio.gather(
             *[
                 _refresh_favicon_cache(entry, local_url=local_urls.get(entry.virtual_host_id))
@@ -126,10 +145,25 @@ async def refresh_all_stale_favicons() -> None:
             return_exceptions=True,
         )
 
+        success_count = 0
+        error_count = 0
         for entry, refreshed_entry in zip(stale_entries, refreshed_entries, strict=True):
             if isinstance(refreshed_entry, Exception):
                 entry.fetched_at = utcnow()
+                error_count += 1
+                logger.error(
+                    "refresh_all_stale_favicons: failed for '{}': {}",
+                    entry.virtual_host.virtual_host_name,
+                    refreshed_entry,
+                )
             else:
                 entry.favicon_data_url, entry.is_placeholder, entry.fetched_at = refreshed_entry
+                success_count += 1
+                logger.debug(
+                    "refresh_all_stale_favicons: success for '{}', placeholder={}",
+                    entry.virtual_host.virtual_host_name,
+                    entry.is_placeholder,
+                )
 
         await session.commit()
+        logger.info("refresh_all_stale_favicons: done — {} succeeded, {} failed", success_count, error_count)

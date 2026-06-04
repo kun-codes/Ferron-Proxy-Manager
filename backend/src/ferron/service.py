@@ -3,6 +3,7 @@ from typing import Annotated
 
 import sqlalchemy.exc
 from fastapi import Depends
+from loguru import logger
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -457,15 +458,17 @@ async def create_static_file_config(
     create_static_file_config_data: schemas.CreateStaticFileConfig,
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> schemas.UpdateStaticFileConfig:
-    existing_virtual_host_stmt = select(models.VirtualHost).where(
-        models.VirtualHost.virtual_host_name == create_static_file_config_data.virtual_host_name
-    )
+    vh_name = create_static_file_config_data.virtual_host_name
+    logger.info("create_static_file_config: creating for '{}'", vh_name)
+
+    existing_virtual_host_stmt = select(models.VirtualHost).where(models.VirtualHost.virtual_host_name == vh_name)
     existing_virtual_host = (await session.exec(existing_virtual_host_stmt)).scalar_one_or_none()
 
     if existing_virtual_host:
-        raise VirtualHostNameAlreadyExists(virtual_host_name=create_static_file_config_data.virtual_host_name)
+        logger.warning("create_static_file_config: virtual host '{}' already exists", vh_name)
+        raise VirtualHostNameAlreadyExists(virtual_host_name=vh_name)
 
-    virtual_host = models.VirtualHost(virtual_host_name=create_static_file_config_data.virtual_host_name)
+    virtual_host = models.VirtualHost(virtual_host_name=vh_name)
 
     static_file_data = create_static_file_config_data.model_dump(exclude_defaults=True, exclude={"virtual_host_name"})
     static_file_config = models.StaticFileConfig(virtual_host=virtual_host, **static_file_data)
@@ -477,18 +480,23 @@ async def create_static_file_config(
     try:
         await session.flush()
     except sqlalchemy.exc.IntegrityError:
-        raise VirtualHostNameAlreadyExists(virtual_host_name=create_static_file_config_data.virtual_host_name)
+        logger.warning("create_static_file_config: integrity error on flush for '{}'", vh_name)
+        raise VirtualHostNameAlreadyExists(virtual_host_name=vh_name)
 
     virtual_host_id = virtual_host.id
+    logger.debug("create_static_file_config: flushed, got virtual_host_id={} for '{}'", virtual_host_id, vh_name)
 
     static_file_config_schema = _static_file_to_schema(static_file_config)
-
     await write_static_file_config_to_file(static_file_config_schema)
+    logger.debug("create_static_file_config: wrote config file for '{}'", vh_name)
 
     await session.commit()
+    logger.debug("create_static_file_config: committed to DB for '{}'", vh_name)
 
     await reload_ferron_service()
+    logger.info("create_static_file_config: reloaded Ferron for '{}'", vh_name)
 
+    logger.info("create_static_file_config: triggering favicon refresh for '{}' (id={})", vh_name, virtual_host_id)
     asyncio.create_task(_trigger_favicon_refresh(virtual_host_id))
 
     return static_file_config_schema
@@ -497,31 +505,41 @@ async def create_static_file_config(
 async def update_static_file_config(
     static_file_config_data: schemas.UpdateStaticFileConfig, session: Annotated[AsyncSession, Depends(get_session)]
 ) -> schemas.UpdateStaticFileConfig:
+    config_id = static_file_config_data.id
+    logger.info("update_static_file_config: starting for config id={}", config_id)
+
     statement = (
         select(models.StaticFileConfig)
         .options(selectinload(models.StaticFileConfig.virtual_host))
-        .where(models.StaticFileConfig.id == static_file_config_data.id)
+        .where(models.StaticFileConfig.id == config_id)
     )
 
     result = await session.exec(statement)
     existing_config = result.scalar_one_or_none()
 
     if not existing_config:
+        logger.warning("update_static_file_config: config id={} not found", config_id)
         raise exceptions.ConfigNotFound(config_type="static file configuration")
 
     if not existing_config.virtual_host:
+        logger.warning("update_static_file_config: config id={} has no virtual host", config_id)
         raise exceptions.ConfigNotFound(config_type="static file configuration")
 
-    if static_file_config_data.virtual_host_name != existing_config.virtual_host.virtual_host_name:
+    old_vh_name = existing_config.virtual_host.virtual_host_name
+    new_vh_name = static_file_config_data.virtual_host_name
+
+    if new_vh_name != old_vh_name:
+        logger.info("update_static_file_config: renaming '{}' -> '{}'", old_vh_name, new_vh_name)
         conflicting_virtual_host_stmt = select(models.VirtualHost).where(
-            models.VirtualHost.virtual_host_name == static_file_config_data.virtual_host_name
+            models.VirtualHost.virtual_host_name == new_vh_name
         )
         conflicting_virtual_host = (await session.exec(conflicting_virtual_host_stmt)).scalar_one_or_none()
 
         if conflicting_virtual_host and conflicting_virtual_host.id != existing_config.virtual_host.id:
-            raise VirtualHostNameAlreadyExists(virtual_host_name=static_file_config_data.virtual_host_name)
+            logger.warning("update_static_file_config: name '{}' already exists", new_vh_name)
+            raise VirtualHostNameAlreadyExists(virtual_host_name=new_vh_name)
 
-        existing_config.virtual_host.virtual_host_name = static_file_config_data.virtual_host_name
+        existing_config.virtual_host.virtual_host_name = new_vh_name
 
     update_data = static_file_config_data.model_dump(exclude={"virtual_host_name", "id"})
     for field, value in update_data.items():
@@ -530,17 +548,22 @@ async def update_static_file_config(
     try:
         await session.flush()
     except sqlalchemy.exc.IntegrityError:
-        raise VirtualHostNameAlreadyExists(virtual_host_name=static_file_config_data.virtual_host_name)
+        logger.warning("update_static_file_config: integrity error on flush for config id={}", config_id)
+        raise VirtualHostNameAlreadyExists(virtual_host_name=new_vh_name)
 
     existing_config_schema = _static_file_to_schema(existing_config)
     await write_static_file_config_to_file(existing_config_schema)
+    logger.debug("update_static_file_config: rewrote config file for '{}'", new_vh_name)
 
     virtual_host_id = existing_config.virtual_host.id
 
     await session.commit()
+    logger.debug("update_static_file_config: committed for '{}' (id={})", new_vh_name, config_id)
 
     await reload_ferron_service()
+    logger.info("update_static_file_config: reloaded Ferron for '{}'", new_vh_name)
 
+    logger.info("update_static_file_config: triggering favicon refresh for '{}' (id={})", new_vh_name, virtual_host_id)
     asyncio.create_task(_trigger_favicon_refresh(virtual_host_id))
 
     return existing_config_schema
@@ -580,6 +603,7 @@ async def read_all_static_file_config(
 async def delete_static_file_config(
     static_file_id: int, session: Annotated[AsyncSession, Depends(get_session)]
 ) -> schemas.UpdateStaticFileConfig:
+    logger.info("delete_static_file_config: starting for config id={}", static_file_id)
     statement = (
         select(models.StaticFileConfig)
         # lazy=selectin because https://stackoverflow.com/a/74256068
@@ -592,7 +616,11 @@ async def delete_static_file_config(
     config = result.scalar_one_or_none()
 
     if not config:
+        logger.warning("delete_static_file_config: config id={} not found", static_file_id)
         raise exceptions.ConfigNotFound(config_type="static file configuration")
+
+    vh_name = config.virtual_host.virtual_host_name if config.virtual_host else "unknown"
+    logger.info("delete_static_file_config: deleting '{}' (config id={})", vh_name, static_file_id)
 
     if config.virtual_host:
         await session.delete(config.virtual_host)
@@ -601,8 +629,12 @@ async def delete_static_file_config(
 
     # delete config file only after successfully deleted from db
     await session.commit()
+    logger.debug("delete_static_file_config: committed delete from DB for '{}'", vh_name)
+
     await delete_static_file_config_from_file(static_file_id)
+    logger.debug("delete_static_file_config: deleted config file for id={}", static_file_id)
 
     await reload_ferron_service()
+    logger.info("delete_static_file_config: reloaded Ferron after deleting '{}'", vh_name)
 
     return _static_file_to_schema(config)

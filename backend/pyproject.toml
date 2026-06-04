@@ -14,6 +14,7 @@ dependencies = [
     "fastapi[standard]>=0.121.0",
     "httpx>=0.28.1",
     "jinja2>=3.1.6",
+    "loguru>=0.7.3",
     "pwdlib[argon2]>=0.3.0",
     "pydantic-extra-types>=2.11.0",
     "pydantic-settings>=2.6.1",
