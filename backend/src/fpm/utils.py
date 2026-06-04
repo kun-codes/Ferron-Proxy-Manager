@@ -9,11 +9,14 @@ from extract_favicon import generate_favicon
 from extract_favicon.config import Favicon
 from extract_favicon.main_async import get_best_favicon
 from PIL import Image
+from reachable.client import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from src.ferron.models import VirtualHost
+from ferron.constants import DEFAULT_HTTP_PORT
+from src.config import settings
+from src.ferron.models import GlobalConfig, VirtualHost
 from src.fpm.constants import (
     _LOCALHOST_ALIASES,
     CONTENT_ONLY_STRATEGY,
@@ -83,17 +86,22 @@ async def resolve_local_favicon_url(session: AsyncSession, virtual_host_id: int)
         sorted_backends = sorted(vh.load_balancer_backends, key=lambda b: b.id)
         return _force_http(_replace_localhost(str(sorted_backends[0].backend_url)))
 
-    # static file config means fall back to internet url
+    # static file config means we use the local Ferron container's URL so we don't go over the internet
+    if vh.static_file_config is not None:
+        global_config = await session.get(GlobalConfig, 1)
+        http_port = global_config.default_http_port if global_config else DEFAULT_HTTP_PORT
+        return f"http://{settings.ferron_container_name}:{http_port}/"
+
     return None
 
 
-async def wait_for_url(url: str) -> bool:
+async def wait_for_url(url: str, headers: dict[str, str] | None = None) -> bool:
     start = asyncio.get_event_loop().time()
 
     async with httpx.AsyncClient(timeout=5.0) as client:
         while asyncio.get_event_loop().time() - start < FAVICON_WAIT_TIMEOUT:
             try:
-                resp = await client.get(url)
+                resp = await client.get(url, headers=headers or {})
                 if resp.status_code < 400:
                     return True
             except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout):
@@ -155,9 +163,35 @@ def encode_favicon_image(favicon: Favicon) -> str:
 async def fetch_favicon_payload(virtual_host_name: str, local_url: str | None = None) -> tuple[str, bool]:
     target_url = local_url if local_url else build_target_url(virtual_host_name)
 
-    await wait_for_url(target_url)
+    custom_client: AsyncClient | None = None
+    host_headers: dict[str, str] | None = None
 
-    favicon = await get_best_favicon(target_url, strategy=CONTENT_ONLY_STRATEGY, include_fallbacks=True)
+    if local_url is not None:
+        parsed = urlparse(local_url)
+        if parsed.hostname == settings.ferron_container_name:  # only true for static configs as
+            # local_url is http://{ferron_container_name}
+            host_headers = {"Host": virtual_host_name}  # this is how ferron will know which static site to serve
+            # this header is set in a browser as well
+            custom_client = AsyncClient(headers=host_headers)
+            await custom_client.open()
+
+    try:
+        if custom_client is not None:  # static configs
+            await wait_for_url(target_url, headers=host_headers)
+        else:  # others like reverse proxy configs and load balancer configs
+            await wait_for_url(target_url)
+
+        favicon = await get_best_favicon(
+            target_url,
+            strategy=CONTENT_ONLY_STRATEGY,
+            include_fallbacks=True,
+            client=custom_client,  # default for client is None so its not a problem if custom_client is None when
+            # passed
+        )
+    finally:
+        if custom_client is not None:
+            await custom_client.close()
+
     is_placeholder = favicon is None or favicon.image is None
 
     if is_placeholder:
