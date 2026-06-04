@@ -14,8 +14,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from ferron.constants import DEFAULT_HTTP_PORT
 from src.config import settings
+from src.ferron.constants import DEFAULT_HTTP_PORT
 from src.ferron.models import GlobalConfig, VirtualHost
 from src.fpm.constants import (
     _LOCALHOST_ALIASES,
