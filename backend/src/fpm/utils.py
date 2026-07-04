@@ -1,6 +1,5 @@
 import asyncio
 import base64
-import socket
 import warnings
 from datetime import datetime, timezone
 from io import BytesIO
@@ -188,40 +187,22 @@ def encode_favicon_image(favicon: Favicon) -> str:
 
 
 async def _fetch_static_favicon(virtual_host_name: str, https_port: int) -> tuple[str, bool]:
-    """
-    uses curl with --resolve to fetch the static site html directly from ferron:
-    curl -vk https://<virtual_host_name>/ --resolve <virtual_host_name>:443:<ferron-ip>
-    """
-    ferron_ip = socket.getaddrinfo(settings.ferron_container_name, https_port, proto=socket.IPPROTO_TCP)[0][4][0]
+    target_url = f"https://{virtual_host_name}:{https_port}/"
 
-    logger.info(f"_fetch_static_favicon: vh='{virtual_host_name}', ferron_ip={ferron_ip}")
+    logger.info(f"_fetch_static_favicon: vh='{virtual_host_name}', target_url={target_url}")
 
-    proc = await asyncio.create_subprocess_exec(
-        "curl",
-        "-vk",
-        f"https://{virtual_host_name}:{https_port}/",
-        "--resolve",
-        f"{virtual_host_name}:{https_port}:{ferron_ip}",
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-    stdout, _ = await proc.communicate()
+    async with httpx.AsyncClient(verify=False) as client:
+        response = await client.get(target_url)
+        html_content = response.text
 
-    if proc.returncode != 0:
-        logger.warning(f"_fetch_static_favicon: curl failed with rc={proc.returncode} for '{virtual_host_name}'")
-        favicon = generate_favicon(f"https://{virtual_host_name}:{https_port}/")
-        return encode_favicon_image(favicon), True
-
-    html_content = stdout.decode()
-    root_url = f"https://{virtual_host_name}:{https_port}/"
-    favicons = from_html(html_content, root_url=root_url, include_fallbacks=True)
+    favicons = from_html(html_content, root_url=target_url, include_fallbacks=True)
 
     if favicons:
         favicon = favicons.pop()
         is_placeholder = False
     else:
         logger.warning(f"_fetch_static_favicon: no favicon found for '{virtual_host_name}', generating placeholder")
-        favicon = generate_favicon(root_url)
+        favicon = generate_favicon(target_url)
         is_placeholder = True
 
     encoded = encode_favicon_image(favicon)
