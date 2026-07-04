@@ -189,23 +189,30 @@ def encode_favicon_image(favicon: Favicon) -> str:
 
 async def _fetch_static_favicon(virtual_host_name: str, https_port: int) -> tuple[str, bool]:
     """
-    this implements the equivalent of:
-    curl -vk https://st.website.com/ --resolve st.website.com:443:<ferron-ip>
-
-    we resolve ferron's docker ip dynamically, then connect to it with
-    sni_hostname so ferron knows which static site to serve.
+    uses curl with --resolve to fetch the static site html directly from ferron:
+    curl -vk https://<virtual_host_name>/ --resolve <virtual_host_name>:443:<ferron-ip>
     """
     ferron_ip = socket.getaddrinfo(settings.ferron_container_name, https_port, proto=socket.IPPROTO_TCP)[0][4][0]
-    target_url = f"https://{ferron_ip}:{https_port}/"
-    headers = {"Host": virtual_host_name}
-    extensions = {"sni_hostname": virtual_host_name}
 
-    logger.info(f"_fetch_static_favicon: vh='{virtual_host_name}', ferron_ip={ferron_ip}, target_url={target_url}")
+    logger.info(f"_fetch_static_favicon: vh='{virtual_host_name}', ferron_ip={ferron_ip}")
 
-    async with httpx.AsyncClient(verify=False) as client:
-        response = await client.get(target_url, headers=headers, extensions=extensions)
-        html_content = response.text
+    proc = await asyncio.create_subprocess_exec(
+        "curl",
+        "-vk",
+        f"https://{virtual_host_name}:{https_port}/",
+        "--resolve",
+        f"{virtual_host_name}:{https_port}:{ferron_ip}",
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, _ = await proc.communicate()
 
+    if proc.returncode != 0:
+        logger.warning(f"_fetch_static_favicon: curl failed with rc={proc.returncode} for '{virtual_host_name}'")
+        favicon = generate_favicon(f"https://{virtual_host_name}:{https_port}/")
+        return encode_favicon_image(favicon), True
+
+    html_content = stdout.decode()
     root_url = f"https://{virtual_host_name}:{https_port}/"
     favicons = from_html(html_content, root_url=root_url, include_fallbacks=True)
 
