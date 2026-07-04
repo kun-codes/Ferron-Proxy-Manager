@@ -110,7 +110,9 @@ async def resolve_local_favicon_url(session: AsyncSession, virtual_host_id: int)
     return None
 
 
-async def wait_for_url(url: str, headers: dict[str, str] | None = None, verify: bool = True) -> bool:
+async def wait_for_url(
+    url: str, headers: dict[str, str] | None = None, verify: bool = True, extensions: dict | None = None
+) -> bool:
     start = asyncio.get_event_loop().time()
 
     logger.debug("wait_for_url: starting wait for {} (headers={}, verify={})", url, headers, verify)
@@ -121,7 +123,7 @@ async def wait_for_url(url: str, headers: dict[str, str] | None = None, verify: 
         async with httpx.AsyncClient(timeout=5.0, verify=verify) as client:
             while asyncio.get_event_loop().time() - start < FAVICON_WAIT_TIMEOUT:
                 try:
-                    resp = await client.get(url, headers=headers or {})
+                    resp = await client.get(url, headers=headers or {}, extensions=extensions or {})
                     if resp.status_code < 400:
                         logger.debug("wait_for_url: {} responded with status={}, reachable", url, resp.status_code)
                         return True
@@ -186,11 +188,12 @@ def encode_favicon_image(favicon: Favicon) -> str:
     raise ValueError("Unsupported favicon image payload")
 
 
-async def _fetch_static_favicon(virtual_host_name: str, target_url: str) -> tuple[str, bool]:
+async def _fetch_static_favicon(virtual_host_name: str, https_port: int, resolve_to: str) -> tuple[str, bool]:
     """
     this implements the equivalent of curl's --resolve flag:
     curl -vk https://st.website.com/ --resolve st.website.com:443:127.0.0.1
     """
+    target_url = f"https://{resolve_to}:{https_port}/"
     headers = {"Host": virtual_host_name}
     extensions = {"sni_hostname": virtual_host_name}
 
@@ -200,7 +203,7 @@ async def _fetch_static_favicon(virtual_host_name: str, target_url: str) -> tupl
         response = await client.get(target_url, headers=headers, extensions=extensions)
         html_content = response.text
 
-    root_url = f"https://{virtual_host_name}"
+    root_url = f"https://{virtual_host_name}:{https_port}/"
     favicons = from_html(html_content, root_url=root_url, include_fallbacks=True)
 
     if favicons:
@@ -229,8 +232,14 @@ async def fetch_favicon_payload(virtual_host_name: str, local_url: str | None = 
         parsed = urlparse(local_url)
         if parsed.hostname == settings.ferron_container_name:
             # now we know that it is a static config
-            await wait_for_url(local_url, headers={"Host": virtual_host_name}, verify=False)
-            return await _fetch_static_favicon(virtual_host_name, local_url)
+            https_port = parsed.port or 443
+            await wait_for_url(
+                f"https://127.0.0.1:{https_port}/",
+                headers={"Host": virtual_host_name},
+                verify=False,
+                extensions={"sni_hostname": virtual_host_name},
+            )
+            return await _fetch_static_favicon(virtual_host_name, https_port, resolve_to="127.0.0.1")
 
     await wait_for_url(target_url)
 
