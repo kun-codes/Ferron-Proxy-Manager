@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import socket
 import warnings
 from datetime import datetime, timezone
 from io import BytesIO
@@ -188,16 +189,21 @@ def encode_favicon_image(favicon: Favicon) -> str:
 
 async def _fetch_static_favicon(virtual_host_name: str, https_port: int) -> tuple[str, bool]:
     """
-    this fetches favicon for a static config by hitting the domain directly.
-    since we already confirmed reachability via wait_for_url, this just fetches
-    the HTML and extracts the favicon.
-    """
-    target_url = f"https://{virtual_host_name}:{https_port}/"
+    this implements the equivalent of:
+    curl -vk https://st.website.com/ --resolve st.website.com:443:<ferron-ip>
 
-    logger.info(f"_fetch_static_favicon: vh='{virtual_host_name}', target_url={target_url}")
+    we resolve ferron's docker ip dynamically, then connect to it with
+    sni_hostname so ferron knows which static site to serve.
+    """
+    ferron_ip = socket.getaddrinfo(settings.ferron_container_name, https_port, proto=socket.IPPROTO_TCP)[0][4][0]
+    target_url = f"https://{ferron_ip}:{https_port}/"
+    headers = {"Host": virtual_host_name}
+    extensions = {"sni_hostname": virtual_host_name}
+
+    logger.info(f"_fetch_static_favicon: vh='{virtual_host_name}', ferron_ip={ferron_ip}, target_url={target_url}")
 
     async with httpx.AsyncClient(verify=False) as client:
-        response = await client.get(target_url)
+        response = await client.get(target_url, headers=headers, extensions=extensions)
         html_content = response.text
 
     root_url = f"https://{virtual_host_name}:{https_port}/"
