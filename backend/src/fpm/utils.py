@@ -110,9 +110,7 @@ async def resolve_local_favicon_url(session: AsyncSession, virtual_host_id: int)
     return None
 
 
-async def wait_for_url(
-    url: str, headers: dict[str, str] | None = None, verify: bool = True, extensions: dict | None = None
-) -> bool:
+async def wait_for_url(url: str, headers: dict[str, str] | None = None, verify: bool = True) -> bool:
     start = asyncio.get_event_loop().time()
 
     logger.debug("wait_for_url: starting wait for {} (headers={}, verify={})", url, headers, verify)
@@ -123,7 +121,7 @@ async def wait_for_url(
         async with httpx.AsyncClient(timeout=5.0, verify=verify) as client:
             while asyncio.get_event_loop().time() - start < FAVICON_WAIT_TIMEOUT:
                 try:
-                    resp = await client.get(url, headers=headers or {}, extensions=extensions or {})
+                    resp = await client.get(url, headers=headers or {})
                     if resp.status_code < 400:
                         logger.debug("wait_for_url: {} responded with status={}, reachable", url, resp.status_code)
                         return True
@@ -233,12 +231,7 @@ async def fetch_favicon_payload(virtual_host_name: str, local_url: str | None = 
         if parsed.hostname == settings.ferron_container_name:
             # now we know that it is a static config
             https_port = parsed.port or 443
-            await wait_for_url(
-                f"https://127.0.0.1:{https_port}/",
-                headers={"Host": virtual_host_name},
-                verify=False,
-                extensions={"sni_hostname": virtual_host_name},
-            )
+            await wait_for_url(build_target_url(virtual_host_name), verify=False)
             return await _fetch_static_favicon(virtual_host_name, https_port, resolve_to="127.0.0.1")
 
     await wait_for_url(target_url)
