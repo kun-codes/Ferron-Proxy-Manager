@@ -191,10 +191,27 @@ async def _fetch_static_favicon(virtual_host_name: str) -> tuple[str, bool]:
 
     logger.info(f"_fetch_static_favicon: vh='{virtual_host_name}', target_url={target_url}")
 
-    async with httpx.AsyncClient(verify=False, timeout=30) as client:
-        response = await client.get(target_url)
-        html_content = response.text
+    proc = await asyncio.create_subprocess_exec(
+        "curl",
+        "-vk",
+        target_url,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, stderr = await proc.communicate()
 
+    logger.debug(f"_fetch_static_favicon: curl stderr:\n{stderr.decode()}")
+
+    if proc.returncode != 0:
+        logger.warning(
+            f"_fetch_static_favicon: curl failed with rc={proc.returncode} for '{virtual_host_name}'\n"
+            f"stderr:\n{stderr.decode()}"
+        )
+        favicon = generate_favicon(target_url)
+        return encode_favicon_image(favicon), True
+
+    html_content = stdout.decode()
+    logger.debug(f"_fetch_static_favicon: curl stdout ({len(html_content)} bytes)")
     favicons = from_html(html_content, root_url=target_url, include_fallbacks=True)
 
     if favicons:
