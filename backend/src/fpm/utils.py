@@ -8,10 +8,10 @@ from urllib.parse import urlparse, urlunparse
 import httpx
 from extract_favicon import generate_favicon
 from extract_favicon.config import Favicon
+from extract_favicon.main import from_html
 from extract_favicon.main_async import get_best_favicon
 from loguru import logger
 from PIL import Image
-from reachable.client import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -186,77 +186,77 @@ def encode_favicon_image(favicon: Favicon) -> str:
     raise ValueError("Unsupported favicon image payload")
 
 
-class _InsecureAsyncClient(AsyncClient):
-    async def open(self) -> None:
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", message="Unverified HTTPS request")
-            self.client = httpx.AsyncClient(
-                transport=self.transport,
-                timeout=self.timeout,
-                headers=self.headers,
-                http2=True,
-                verify=False,
-            )
+async def _fetch_static_favicon(virtual_host_name: str, target_url: str) -> tuple[str, bool]:
+    """
+    this implements the equivalent of curl's --resolve flag:
+    curl -vk https://st.website.com/ --resolve st.website.com:443:127.0.0.1
+    """
+    headers = {"Host": virtual_host_name}
+    extensions = {"sni_hostname": virtual_host_name}
+
+    logger.info(f"_fetch_static_favicon: vh='{virtual_host_name}', target_url={target_url}")
+
+    async with httpx.AsyncClient(verify=False) as client:
+        response = await client.get(target_url, headers=headers, extensions=extensions)
+        html_content = response.text
+
+    root_url = f"https://{virtual_host_name}"
+    favicons = from_html(html_content, root_url=root_url, include_fallbacks=True)
+
+    if favicons:
+        favicon = favicons.pop()
+        is_placeholder = False
+    else:
+        logger.warning(f"_fetch_static_favicon: no favicon found for '{virtual_host_name}', generating placeholder")
+        favicon = generate_favicon(root_url)
+        is_placeholder = True
+
+    encoded = encode_favicon_image(favicon)
+
+    logger.debug(
+        f"_fetch_static_favicon: final data_url length={len(encoded)}, "
+        f"is_placeholder={is_placeholder} for '{virtual_host_name}'"
+    )
+
+    return encoded, is_placeholder
 
 
 async def fetch_favicon_payload(virtual_host_name: str, local_url: str | None = None) -> tuple[str, bool]:
     target_url = local_url if local_url else build_target_url(virtual_host_name)
-    logger.info("fetch_favicon_payload: vh='{}', target_url={}, local_url={}", virtual_host_name, target_url, local_url)
-
-    custom_client: AsyncClient | None = None
-    host_headers: dict[str, str] | None = None
+    logger.info(f"fetch_favicon_payload: vh='{virtual_host_name}', target_url={target_url}, local_url={local_url}")
 
     if local_url is not None:
         parsed = urlparse(local_url)
-        if parsed.hostname == settings.ferron_container_name:  # only true for static configs as
-            # local_url is https://{ferron_container_name}
-            host_headers = {"Host": virtual_host_name}  # this is how ferron will know which static site to serve
-            # this header is set in a browser as well
-            logger.info(
-                "fetch_favicon_payload: creating insecure AsyncClient (verify=False) with Host='{}' for {}",
-                virtual_host_name,
-                target_url,
-            )
-            custom_client = _InsecureAsyncClient(headers=host_headers)
-            await custom_client.open()
+        if parsed.hostname == settings.ferron_container_name:
+            # now we know that it is a static config
+            https_port = parsed.port or 443
+            target_url = f"https://127.0.0.1:{https_port}/"
+            await wait_for_url(target_url, headers={"Host": virtual_host_name}, verify=False)
+            return await _fetch_static_favicon(virtual_host_name, target_url)
 
-    try:
-        if custom_client is not None:  # static configs
-            await wait_for_url(target_url, headers=host_headers, verify=False)
-        else:  # others like reverse proxy configs and load balancer configs
-            await wait_for_url(target_url)
+    await wait_for_url(target_url)
 
-        favicon = await get_best_favicon(
-            target_url,
-            strategy=CONTENT_ONLY_STRATEGY,
-            include_fallbacks=True,
-            client=custom_client,  # default for client is None so its not a problem if custom_client is None when
-            # passed
-        )
-        logger.info(
-            "get_best_favicon for '{}': favicon={}, format={}, size={}x{}",
-            virtual_host_name,
-            favicon is not None and favicon.image is not None,
-            favicon.format if favicon else "N/A",
-            favicon.width if favicon else 0,
-            favicon.height if favicon else 0,
-        )
-    finally:
-        if custom_client is not None:
-            logger.debug("fetch_favicon_payload: closing custom AsyncClient for '{}'", virtual_host_name)
-            await custom_client.close()
+    favicon = await get_best_favicon(
+        target_url,
+        strategy=CONTENT_ONLY_STRATEGY,
+        include_fallbacks=True,
+    )
+    logger.info(
+        f"get_best_favicon for '{virtual_host_name}': "
+        f"favicon={favicon is not None and favicon.image is not None}, "
+        f"format={favicon.format if favicon else 'N/A'}, "
+        f"size={favicon.width if favicon else 0}x{favicon.height if favicon else 0}"
+    )
 
     is_placeholder = favicon is None or favicon.image is None
 
     if is_placeholder:
-        logger.warning("fetch_favicon_payload: no favicon found for '{}', generating placeholder", virtual_host_name)
+        logger.warning(f"fetch_favicon_payload: no favicon found for '{virtual_host_name}', generating placeholder")
         favicon = generate_favicon(build_target_url(virtual_host_name))
 
     encoded = encode_favicon_image(favicon)
     logger.debug(
-        "fetch_favicon_payload: final data_url length={}, is_placeholder={} for '{}'",
-        len(encoded),
-        is_placeholder,
-        virtual_host_name,
+        f"fetch_favicon_payload: final data_url length={len(encoded)}, "
+        f"is_placeholder={is_placeholder} for '{virtual_host_name}'"
     )
     return encoded, is_placeholder
