@@ -199,15 +199,10 @@ async def _fetch_static_favicon(virtual_host_name: str, https_port: int, resolve
 
     async with httpx.AsyncClient(verify=False) as client:
         response = await client.get(target_url, headers=headers, extensions=extensions)
-        logger.info(f"fetched response for {target_url} with headers={headers} and extensions={extensions}")
         html_content = response.text
 
     root_url = f"https://{virtual_host_name}:{https_port}/"
-    logger.info(
-        f"about to fetch favicons for '{virtual_host_name}' from {root_url} with html_content={html_content!r}..."
-    )
     favicons = from_html(html_content, root_url=root_url, include_fallbacks=True)
-    logger.info(f"...got {len(favicons)} favicons for '{virtual_host_name}'")
 
     if favicons:
         favicon = favicons.pop()
@@ -237,7 +232,7 @@ async def fetch_favicon_payload(virtual_host_name: str, local_url: str | None = 
             # now we know that it is a static config
             https_port = parsed.port or 443
             await wait_for_url(build_target_url(virtual_host_name), verify=False)
-            return await _fetch_static_favicon(virtual_host_name, https_port, resolve_to="127.0.0.1")
+            return await _fetch_static_favicon(virtual_host_name, https_port, resolve_to=settings.ferron_container_name)
 
     await wait_for_url(target_url)
 
