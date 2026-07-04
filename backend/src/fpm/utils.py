@@ -211,7 +211,7 @@ async def _fetch_static_favicon(virtual_host_name: str) -> tuple[str, bool]:
         return encode_favicon_image(favicon), True
 
     html_content = stdout.decode()
-    logger.debug(f"_fetch_static_favicon: curl stdout ({len(html_content)} bytes)")
+    logger.debug(f"_fetch_static_favicon: curl stdout ({len(html_content)} bytes):\n{html_content}")
     favicons = from_html(html_content, root_url=target_url, include_fallbacks=True)
 
     if favicons:
