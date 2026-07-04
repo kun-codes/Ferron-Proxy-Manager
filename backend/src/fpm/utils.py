@@ -186,19 +186,18 @@ def encode_favicon_image(favicon: Favicon) -> str:
     raise ValueError("Unsupported favicon image payload")
 
 
-async def _fetch_static_favicon(virtual_host_name: str, https_port: int, resolve_to: str) -> tuple[str, bool]:
+async def _fetch_static_favicon(virtual_host_name: str, https_port: int) -> tuple[str, bool]:
     """
-    this implements the equivalent of curl's --resolve flag:
-    curl -vk https://st.website.com/ --resolve st.website.com:443:127.0.0.1
+    this fetches favicon for a static config by hitting the domain directly.
+    since we already confirmed reachability via wait_for_url, this just fetches
+    the HTML and extracts the favicon.
     """
-    target_url = f"https://{resolve_to}:{https_port}/"
-    headers = {"Host": virtual_host_name}
-    extensions = {"sni_hostname": virtual_host_name}
+    target_url = f"https://{virtual_host_name}:{https_port}/"
 
     logger.info(f"_fetch_static_favicon: vh='{virtual_host_name}', target_url={target_url}")
 
     async with httpx.AsyncClient(verify=False) as client:
-        response = await client.get(target_url, headers=headers, extensions=extensions)
+        response = await client.get(target_url)
         html_content = response.text
 
     root_url = f"https://{virtual_host_name}:{https_port}/"
@@ -232,7 +231,7 @@ async def fetch_favicon_payload(virtual_host_name: str, local_url: str | None = 
             # now we know that it is a static config
             https_port = parsed.port or 443
             await wait_for_url(build_target_url(virtual_host_name), verify=False)
-            return await _fetch_static_favicon(virtual_host_name, https_port, resolve_to=settings.ferron_container_name)
+            return await _fetch_static_favicon(virtual_host_name, https_port)
 
     await wait_for_url(target_url)
 
