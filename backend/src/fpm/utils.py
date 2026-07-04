@@ -186,12 +186,12 @@ def encode_favicon_image(favicon: Favicon) -> str:
     raise ValueError("Unsupported favicon image payload")
 
 
-async def _fetch_static_favicon(virtual_host_name: str, https_port: int) -> tuple[str, bool]:
-    target_url = f"https://{virtual_host_name}:{https_port}/"
+async def _fetch_static_favicon(virtual_host_name: str) -> tuple[str, bool]:
+    target_url = build_target_url(virtual_host_name)
 
     logger.info(f"_fetch_static_favicon: vh='{virtual_host_name}', target_url={target_url}")
 
-    async with httpx.AsyncClient(verify=False) as client:
+    async with httpx.AsyncClient(verify=False, timeout=30) as client:
         response = await client.get(target_url)
         html_content = response.text
 
@@ -223,9 +223,8 @@ async def fetch_favicon_payload(virtual_host_name: str, local_url: str | None = 
         parsed = urlparse(local_url)
         if parsed.hostname == settings.ferron_container_name:
             # now we know that it is a static config
-            https_port = parsed.port or 443
             await wait_for_url(build_target_url(virtual_host_name), verify=False)
-            return await _fetch_static_favicon(virtual_host_name, https_port)
+            return await _fetch_static_favicon(virtual_host_name)
 
     await wait_for_url(target_url)
 
