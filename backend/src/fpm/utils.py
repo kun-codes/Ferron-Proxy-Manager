@@ -229,10 +229,8 @@ async def fetch_favicon_payload(virtual_host_name: str, local_url: str | None = 
         parsed = urlparse(local_url)
         if parsed.hostname == settings.ferron_container_name:
             # now we know that it is a static config
-            https_port = parsed.port or 443
-            target_url = f"https://127.0.0.1:{https_port}/"
-            await wait_for_url(target_url, headers={"Host": virtual_host_name}, verify=False)
-            return await _fetch_static_favicon(virtual_host_name, target_url)
+            await wait_for_url(local_url, headers={"Host": virtual_host_name}, verify=False)
+            return await _fetch_static_favicon(virtual_host_name, local_url)
 
     await wait_for_url(target_url)
 
