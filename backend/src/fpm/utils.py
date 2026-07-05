@@ -237,12 +237,12 @@ async def fetch_favicon_payload(virtual_host_name: str, local_url: str | None = 
     target_url = local_url if local_url else build_target_url(virtual_host_name)
     logger.info(f"fetch_favicon_payload: vh='{virtual_host_name}', target_url={target_url}, local_url={local_url}")
 
-    if local_url is not None:
-        parsed = urlparse(local_url)
-        if parsed.hostname == settings.ferron_container_name:
-            # now we know that it is a static config
-            await wait_for_url(build_target_url(virtual_host_name), verify=False)
-            return await _fetch_static_favicon(virtual_host_name)
+    # if local_url is not None:
+    #     parsed = urlparse(local_url)
+    #     if parsed.hostname == settings.ferron_container_name:
+    #         # now we know that it is a static config
+    #         await wait_for_url(build_target_url(virtual_host_name), verify=False)
+    #         return await _fetch_static_favicon(virtual_host_name)
 
     await wait_for_url(target_url)
 
