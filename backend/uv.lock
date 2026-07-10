@@ -347,7 +347,7 @@ wheels = [
 
 [[package]]
 name = "extract-favicon"
-version = "0.5.4"
+version = "0.5.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "beautifulsoup4" },
@@ -356,9 +356,9 @@ dependencies = [
     { name = "reachable" },
     { name = "tldextract" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/2d/4b/b72ef77ed7fb70d4ee3965a0687c1e061506014bd08b7b9ddbdf43d5edb0/extract_favicon-0.5.4.tar.gz", hash = "sha256:79d7ec534d1b918507c5ed21e8587094ebaae7f3472c98376787443f7df2e612", size = 22844, upload-time = "2025-09-26T09:54:53.79Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/4b/f6/cd92339e32805675d83a3b98e2f3b09ff67a568c0c523f05bc990277c485/extract_favicon-0.5.5.tar.gz", hash = "sha256:aca95baa9a3e4bfb8dfefb191ce817ead624aa90d14cf4c043a7132aeea23417", size = 23784, upload-time = "2026-07-07T07:14:06.272Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/0f/93/7bd36f745b6c78802d634d086030b45f7faa721df2d18037ef8f286ba2ce/extract_favicon-0.5.4-py3-none-any.whl", hash = "sha256:52f6801e034fd48242a58642c6b047c75f6b275f9adc39279eb2b718f7d444ea", size = 20977, upload-time = "2025-09-26T09:54:52.316Z" },
+    { url = "https://files.pythonhosted.org/packages/7e/0f/537ee58ee96b9285dc7621135ec3c9a4523c2737f83d178dbd0afcf7f452/extract_favicon-0.5.5-py3-none-any.whl", hash = "sha256:2e8bb67cf7fb9cf4080313e2b2d05b398ef4c9aface9ba4bc41949004ecb92a6", size = 21424, upload-time = "2026-07-07T07:14:05.051Z" },
 ]
 
 [[package]]
