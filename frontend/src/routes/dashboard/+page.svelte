@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
+    import { onDestroy, onMount } from 'svelte';
     import client from '$lib/apiClient';
     import { ApiPaths, type components } from '$lib/api/types';
     import DashboardHostCard from '$lib/components/dashboard-host-card.svelte';
@@ -10,9 +10,12 @@
 
     type DashboardHost = components['schemas']['DashboardHost'];
 
+    const POLL_INTERVAL_MS = 2000;
+
     let hosts: DashboardHost[] = $state([]);
     let loadError = $state(false);
     let loading = $state(true);
+    let pollInterval: ReturnType<typeof setInterval> | null = null;
 
     onMount(async () => {
         const { data, error } = await client.GET(ApiPaths.read_dashboard_hosts_api_fpm_dashboard_get);
@@ -21,9 +24,48 @@
             loadError = true;
         } else {
             hosts = data ?? [];
+            startPolling();
         }
         loading = false;
     });
+
+    onDestroy(() => {
+        if (pollInterval) {
+            clearInterval(pollInterval);
+        }
+    });
+
+    function startPolling() {
+        if (!hosts.some((h) => h.is_placeholder)) {
+            return;
+        }
+
+        pollInterval = setInterval(async () => {
+            const placeholders = hosts.filter((h) => h.is_placeholder);
+
+            if (placeholders.length === 0) {
+                if (pollInterval) {
+                    clearInterval(pollInterval);
+                    pollInterval = null;
+                }
+                return;
+            }
+
+            for (const host of placeholders) {
+                const { data } = await client.GET(
+                    ApiPaths.read_host_favicon_api_fpm_dashboard__virtual_host_name__favicon_get,
+                    { params: { path: { virtual_host_name: host.virtual_host_name } } },
+                );
+
+                if (data) {
+                    const index = hosts.findIndex((h) => h.virtual_host_name === host.virtual_host_name);
+                    if (index !== -1) {
+                        hosts[index] = { ...hosts[index], ...data };
+                    }
+                }
+            }
+        }, POLL_INTERVAL_MS);
+    }
 </script>
 
 {#if loading}
