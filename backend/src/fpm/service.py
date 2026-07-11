@@ -9,6 +9,7 @@ from sqlalchemy.orm import selectinload
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from src.database import engine, get_session
+from src.ferron.exceptions import ConfigNotFound
 from src.ferron.models import VirtualHost
 from src.fpm import models, schemas
 from src.fpm.constants import FAVICON_REFRESH_TTL
@@ -51,6 +52,30 @@ async def read_dashboard_hosts(
         )
 
     return result
+
+
+async def read_host_favicon(
+    session: AsyncSession,
+    virtual_host_name: str,
+) -> schemas.DashboardHost:
+    vh_result = await session.exec(select(VirtualHost).where(VirtualHost.virtual_host_name == virtual_host_name))
+    vh = vh_result.scalar_one_or_none()
+
+    if vh is None:
+        raise ConfigNotFound(config_type="virtual host")
+
+    cache_result = await session.exec(
+        select(models.DashboardFaviconCache).where(models.DashboardFaviconCache.virtual_host_id == vh.id)
+    )
+    cache = cache_result.scalar_one_or_none()
+
+    return schemas.DashboardHost(
+        virtual_host_name=vh.virtual_host_name,
+        target_url=build_target_url(vh.virtual_host_name),
+        favicon_data_url=cache.favicon_data_url if cache else "",
+        is_placeholder=cache is None or cache.is_placeholder,
+        fetched_at=cache.fetched_at if cache else utcnow(),
+    )
 
 
 async def _refresh_favicon_cache(
