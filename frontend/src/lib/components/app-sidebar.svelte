@@ -6,7 +6,7 @@
                 url: '#',
                 items: [
                     {
-                        title: 'Server (WIP)',
+                        title: 'Dashboard',
                         url: '/dashboard'
                     }
                 ]
