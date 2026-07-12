@@ -11,6 +11,7 @@
     type DashboardHost = components['schemas']['DashboardHost'];
 
     const POLL_INTERVAL_MS = 2000;
+    const POLL_TIMEOUT_MS = 30000;
 
     let hosts: DashboardHost[] = $state([]);
     let loadError = $state(false);
@@ -40,10 +41,12 @@
             return;
         }
 
+        const start = Date.now();
+
         pollInterval = setInterval(async () => {
             const placeholders = hosts.filter((h) => h.is_placeholder);
 
-            if (placeholders.length === 0) {
+            if (placeholders.length === 0 || Date.now() - start >= POLL_TIMEOUT_MS) {
                 if (pollInterval) {
                     clearInterval(pollInterval);
                     pollInterval = null;
