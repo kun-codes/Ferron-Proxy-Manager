@@ -94,15 +94,23 @@ async def refresh_favicon_for_host(virtual_host_id: int) -> None:
         if vh is None:
             return
 
-        virtual_host_name = vh.virtual_host_name
-        local_url = await resolve_local_favicon_url(session, virtual_host_id)
-        favicon_data_url, is_placeholder = await fetch_favicon_payload(virtual_host_name, local_url=local_url)
-        now = utcnow()
-
         result = await session.exec(
             select(models.DashboardFaviconCache).where(models.DashboardFaviconCache.virtual_host_id == virtual_host_id)
         )
         entry = result.scalar_one_or_none()
+
+        # clear existing image so the frontend shows Globe during the refresh. This is done
+        # like this so the polling in frontend dashboard route automatically knows that it
+        # should poll for the new favicon after updating a config
+        virtual_host_name = vh.virtual_host_name
+        if entry is not None:
+            entry.favicon_data_url = ""
+            entry.is_placeholder = True
+            await session.commit()
+
+        local_url = await resolve_local_favicon_url(session, virtual_host_id)
+        favicon_data_url, is_placeholder = await fetch_favicon_payload(virtual_host_name, local_url=local_url)
+        now = utcnow()
 
         if entry is None:
             entry = models.DashboardFaviconCache(
