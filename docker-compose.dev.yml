@@ -32,6 +32,9 @@ services:
         restart: unless-stopped
         depends_on:
             - ferron
+        networks:
+            - default
+            - fpm-network
 
     frontend:
         build:

@@ -18,8 +18,21 @@ from src.database import engine, run_migrations
 from src.exceptions import RateLimitExceededCustomException
 from src.ferron.constants import ConfigFileLocation
 from src.ferron.router import router as config_router
+from src.fpm.constants import FAVICON_REFRESH_TTL
+from src.fpm.router import router as fpm_router
 from src.management.router import router as management_router
 from src.service import create_ferron_global_config, rate_limiter
+
+
+async def _periodic_favicon_refresh() -> None:
+    while True:
+        await asyncio.sleep(FAVICON_REFRESH_TTL.total_seconds())
+        try:
+            from src.fpm.service import refresh_all_stale_favicons
+
+            await refresh_all_stale_favicons()
+        except Exception:
+            pass
 
 
 @asynccontextmanager
@@ -52,7 +65,16 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     async with SQLModelAsyncSession(engine) as session:
         await create_ferron_global_config(session)
 
+    favicon_refresh_task = asyncio.create_task(_periodic_favicon_refresh())
+
     yield
+
+    # on shutdown of fastapi backend, stop this task
+    favicon_refresh_task.cancel()
+    try:
+        await favicon_refresh_task
+    except asyncio.CancelledError:  # intentional cancellation is not an error so just suppress it
+        pass
 
 
 origins = ["http://localhost:5173", "http://localhost:3000"]
@@ -86,5 +108,6 @@ async def rate_limit_handler(_request: Request, _exc: RateLimitExceeded) -> JSON
 api_router = APIRouter(prefix="/api")
 api_router.include_router(auth_router)
 api_router.include_router(config_router)
+api_router.include_router(fpm_router)
 api_router.include_router(management_router)
 app.include_router(api_router)
