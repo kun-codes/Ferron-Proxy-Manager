@@ -155,7 +155,7 @@ async def wait_for_url(url: str, headers: dict[str, str] | None = None) -> bool:
         while asyncio.get_event_loop().time() - start < FAVICON_WAIT_TIMEOUT:
             try:
                 resp = await client.get(url, headers=headers or {})
-                if resp.status_code < 400:
+                if resp.is_success:
                     return True
             except (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout):
                 pass
