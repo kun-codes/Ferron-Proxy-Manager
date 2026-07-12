@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import TYPE_CHECKING, Any, List, Optional
 
 from pydantic import HttpUrl
 from sqlalchemy import Column, ForeignKey, Integer, String, TypeDecorator
@@ -25,6 +25,9 @@ from src.ferron.constants import (
     DEFAULT_USE_SPA,
     DEFAULT_USE_UNIX_SOCKET,
 )
+
+if TYPE_CHECKING:
+    from src.fpm.models import DashboardFaviconCache
 
 
 # from: https://github.com/fastapi/sqlmodel/discussions/956#discussioncomment-10084150
@@ -76,6 +79,10 @@ class VirtualHost(SQLModel, table=True):
     )
     load_balancer_backends: List["LoadBalancerBackendURL"] = Relationship(
         back_populates="virtual_host", sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+    )
+    dashboard_favicon_cache: Optional["DashboardFaviconCache"] = Relationship(
+        back_populates="virtual_host",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan", "uselist": False},
     )
 
 

@@ -15,4 +15,4 @@ class DashboardFaviconCache(SQLModel, table=True):
     is_placeholder: bool
     fetched_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-    virtual_host: VirtualHost = Relationship()
+    virtual_host: VirtualHost = Relationship(back_populates="dashboard_favicon_cache")
