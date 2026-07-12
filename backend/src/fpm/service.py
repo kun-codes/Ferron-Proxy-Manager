@@ -32,7 +32,6 @@ async def read_dashboard_hosts(
         )
         cached_entries = cache_result.scalars().all()
     except SQLAlchemyError:
-        await session.rollback()
         cached_entries = []
 
     cache_by_vh_id = {entry.virtual_host_id: entry for entry in cached_entries}
