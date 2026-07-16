@@ -50,6 +50,6 @@
     "dependencies": {
         "cookie": "^1.1.1",
         "mode-watcher": "^1.1.0",
-        "openapi-fetch": "^0.15.2"
+        "openapi-fetch": "^0.17.0"
     }
 }
