@@ -15,7 +15,7 @@
         "generate:types": "openapi-typescript http://localhost:8000/openapi.json -o src/lib/api/types.ts --enum=true --enum-values=true --make-paths-enum=true --dedupe-enums=true"
     },
     "devDependencies": {
-        "@eslint/compat": "^1.4.1",
+        "@eslint/compat": "^2.1.0",
         "@eslint/js": "^9.39.5",
         "@internationalized/date": "^3.12.2",
         "@lucide/svelte": "^0.561.0",
