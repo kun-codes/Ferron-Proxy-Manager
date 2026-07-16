@@ -18,7 +18,7 @@
         "@eslint/compat": "^2.1.0",
         "@eslint/js": "^10.0.1",
         "@internationalized/date": "^3.12.2",
-        "@lucide/svelte": "^0.561.0",
+        "@lucide/svelte": "^1.24.0",
         "@sveltejs/adapter-auto": "^7.0.1",
         "@sveltejs/adapter-node": "^5.5.7",
         "@sveltejs/kit": "^2.69.2",
