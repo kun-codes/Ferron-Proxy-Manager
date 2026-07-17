@@ -161,7 +161,7 @@
             }
 
             if (response?.response.ok) {
-                data = data.filter((h) => h.id !== host.id);
+                data = data.filter((h) => !(h.id === host.id && h.type === host.type));
                 toast.success(`Host ${host.virtual_host_name} deleted`);
             } else {
                 toast.error('Failed to delete host configuration');
@@ -231,6 +231,7 @@
             return data;
         },
         columns,
+        getRowId: (row) => `${row.type}-${row.id}`,
         getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: getSortedRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
@@ -279,7 +280,9 @@
                     backend_display: response.data.backend_url
                 };
 
-                const index = data.findIndex((h) => h.id === editingHost!.id);
+                const index = data.findIndex(
+                    (h) => h.id === editingHost!.id && h.type === editingHost!.type
+                );
                 if (index !== -1) {
                     let newData = [...data];
                     newData[index] = updatedHost;
@@ -318,7 +321,9 @@
                     backend_display: response.data.backend_urls.join(', ')
                 };
 
-                const index = data.findIndex((h) => h.id === editingHost!.id);
+                const index = data.findIndex(
+                    (h) => h.id === editingHost!.id && h.type === editingHost!.type
+                );
                 if (index !== -1) {
                     let newData = [...data];
                     newData[index] = updatedHost;
@@ -357,7 +362,9 @@
                     backend_display: response.data.static_files_dir
                 };
 
-                const index = data.findIndex((h) => h.id === editingHost!.id);
+                const index = data.findIndex(
+                    (h) => h.id === editingHost!.id && h.type === editingHost!.type
+                );
                 if (index !== -1) {
                     let newData = [...data];
                     newData[index] = updatedHost;
