@@ -20,6 +20,7 @@
     import * as Dialog from '$lib/components/ui/dialog/index.js';
     import * as Select from '$lib/components/ui/select/index.js';
     import HostActionButtons from './host-action-buttons.svelte';
+    import ExternalLinkCell from './external-link-cell.svelte';
     import { createRawSnippet } from 'svelte';
     import LoadBalancerHostForm from './load-balancer-host-form.svelte';
     import ReverseProxyHostForm from './reverse-proxy-host-form.svelte';
@@ -176,7 +177,11 @@
         {
             accessorKey: 'virtual_host_name',
             header: 'Host',
-            cell: ({ row }) => row.original.virtual_host_name
+            cell: ({ row }) =>
+                renderComponent(ExternalLinkCell, {
+                    href: `https://${row.original.virtual_host_name}`,
+                    label: row.original.virtual_host_name
+                })
         },
         {
             accessorKey: 'backend_display',
