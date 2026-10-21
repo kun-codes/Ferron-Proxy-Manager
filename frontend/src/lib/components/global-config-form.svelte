@@ -23,7 +23,7 @@
         is_h1_protocol_enabled: true,
         is_h2_protocol_enabled: true,
         is_h3_protocol_enabled: false,
-        timeout: 300000,
+        timeout: 300,
         cache_max_entries: 1024
     };
 
@@ -204,11 +204,11 @@
                     </Field.Field>
 
                     <Field.Field>
-                        <Field.Label for="timeout">Timeout (milliseconds)</Field.Label>
+                        <Field.Label for="timeout">Timeout (seconds)</Field.Label>
                         <Input
                             id="timeout"
                             type="number"
-                            placeholder="300000"
+                            placeholder="300"
                             bind:value={formData.timeout}
                             required
                             disabled={isSubmitting}
@@ -218,7 +218,7 @@
                             <Field.Error>{fieldErrors.timeout}</Field.Error>
                         {:else}
                             <Field.Description>
-                                Request timeout in milliseconds (default: 300000 = 5 minutes).
+                                Request timeout in seconds (default: 300 = 5 minutes).
                             </Field.Description>
                         {/if}
                     </Field.Field>
