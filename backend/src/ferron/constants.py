@@ -40,4 +40,4 @@ SUB_CONFIG_PATH = "/etc/ferron-proxy-manager"
 class ConfigFileLocation(Enum):
     # this is where all configs for global and other virtual hosts are included using include statement
     MAIN_CONFIG = f"{SUB_CONFIG_PATH}/main.kdl"
-    GLOBAL_CONFIG = f"{SUB_CONFIG_PATH}/global.kdl"
+    GLOBAL_CONFIG = f"{SUB_CONFIG_PATH}/global.conf"
