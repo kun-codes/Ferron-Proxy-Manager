@@ -1,23 +1,27 @@
-{# the global config which implies a virtual host (unlike `globals {}` #}
-* {
-{% if default_http_port %}
+{
+    {% if default_http_port %}
     default_http_port {{ default_http_port }}
-{% endif -%}
+    {% endif -%}
 
-{% if default_https_port %}
+    {% if default_https_port %}
     default_https_port {{ default_https_port }}
-{% endif -%}
+    {% endif -%}
 
-{% if protocols  %}
-    protocols{% for p in protocols %} "{{ p }}"{% endfor %}
-{% endif -%}
+    {%  if protocols or timeout %}
+    http {
+        {%  if protocols %}
+        protocols {% for p in protocols %} "{{ p }}"{% endfor %}
+        {% endif -%}
 
-{% if timeout %}
-    timeout {{ timeout }}
-{% endif -%}
+        {% if timeout %}
+        timeout {{ timeout }}
+        {% endif -%}
+    }
+    {% endif -%}
 
-{% if cache_max_entries %}
-    cache_max_entries {{ cache_max_entries }}
-{% endif -%}
-
+    {% if cache_max_entries %}
+    cache {
+        max_entries {{ cache_max_entries }}
+    }
+    {% endif -%}
 }
