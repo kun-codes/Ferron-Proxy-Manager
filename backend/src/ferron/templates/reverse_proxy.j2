@@ -4,19 +4,22 @@
 {%- block body -%}
 
 {%- block proxy_location %}
-
-{%- if use_unix_socket and unix_socket_path is defined %}
-    proxy "{{ backend_url }}" unix="{{ unix_socket_path }}"
-{% else %}
-    proxy "{{ backend_url }}"
-{% endif -%}
+    proxy {
+        {%- if use_unix_socket and unix_socket_path is defined %}
+            upstream "{{ backend_url }}" {
+                unix {{ unix_socket_path }}
+            }
+        {% else %}
+            upstream "{{ backend_url }}"
+        {% endif -%}
+        {%- if preserve_host_header %}
+            request_header Host "{% raw %}{{request.header.host}}{% endraw %}"
+        {% endif %}
+    }
 
 {%- endblock -%}
 
 {% include "_cache_template.j2" -%}
 
-{%- if preserve_host_header %}
-    proxy_request_header_replace "Host" "{header:Host}"
-{% endif %}
 
 {%- endblock -%}
