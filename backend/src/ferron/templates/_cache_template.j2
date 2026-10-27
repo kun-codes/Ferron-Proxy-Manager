@@ -1,5 +1,6 @@
 {% if cache and cache_max_age is defined %}
-    // for in memory caching to speed up websites
-    cache
+    # for in memory caching to speed up websites
     file_cache_control "max-age={{ cache_max_age }}"
+    cache {
+    }
 {% endif -%}
