@@ -36,7 +36,7 @@
         preserve_host_header: false,
         lb_health_check: false,
         lb_health_check_max_fails: 3,
-        lb_health_check_window: 5000
+        lb_health_check_window: 5
     };
 
     let formData = $state<CreateLoadBalancerConfig | UpdateLoadBalancerConfig>(
@@ -270,12 +270,12 @@
 
                 <Field.Field>
                     <Field.Label for="lb-health-check-window"
-                        >Health Check Window (milliseconds)</Field.Label
+                        >Health Check Window (seconds)</Field.Label
                     >
                     <Input
                         id="lb-health-check-window"
                         type="number"
-                        placeholder="5000"
+                        placeholder="5"
                         bind:value={formData.lb_health_check_window}
                         disabled={!formData.lb_health_check || isSubmitting}
                         min="0"
@@ -284,7 +284,7 @@
                         <Field.Error>{fieldErrors.lb_health_check_window}</Field.Error>
                     {:else}
                         <Field.Description>
-                            Time window in milliseconds for counting health check failures.
+                            Time window in seconds for counting health check failures.
                         </Field.Description>
                     {/if}
                 </Field.Field>
